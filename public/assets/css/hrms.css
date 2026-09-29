@@ -1395,6 +1395,12 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
    Flatpickr Modern Calendar Custom Theme
    ============================================================================== */
 .flatpickr-calendar {
+  opacity: 0;
+  display: none;
+  text-align: center;
+  visibility: hidden;
+  position: absolute;
+  box-sizing: border-box;
   background: var(--bg-card) !important;
   border: 1px solid var(--border-color) !important;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.22), 0 2px 6px rgba(0, 0, 0, 0.08) !important;
@@ -1404,6 +1410,53 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   color: var(--text-main) !important;
   z-index: 999999 !important;
   width: 310px !important;
+}
+
+.flatpickr-calendar.open,
+.flatpickr-calendar.inline {
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: inline-block !important;
+}
+
+.flatpickr-calendar.static {
+  position: absolute !important;
+  top: calc(100% + 4px) !important;
+}
+
+.flatpickr-weekdays {
+  display: flex !important;
+  align-items: center !important;
+  width: 100% !important;
+  overflow: hidden !important;
+}
+
+.flatpickr-weekdaycontainer {
+  display: flex !important;
+  flex: 1 !important;
+}
+
+.flatpickr-days {
+  width: 100% !important;
+  display: flex !important;
+  justify-content: center !important;
+  overflow: hidden !important;
+}
+
+.dayContainer {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: space-around !important;
+  width: 294px !important;
+  min-width: 294px !important;
+  max-width: 294px !important;
+  padding: 0 !important;
+  outline: 0 !important;
+}
+
+.flatpickr-day {
+  flex-basis: 14.2857143% !important;
+  max-width: 39px !important;
 }
 
 .flatpickr-calendar.arrowTop:before, 
