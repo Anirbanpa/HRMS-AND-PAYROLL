@@ -47,6 +47,7 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction
 # Configure script permissions and ownership
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 775 /var/www/html/writable \
+    && sed -i 's/\r$//' /var/www/html/docker/entrypoint.sh \
     && chmod +x /var/www/html/docker/entrypoint.sh
 
 # Expose HTTP port
