@@ -288,7 +288,7 @@ class PayrollController extends BaseController
 
         // Dispatch payroll_ready notification to all processed employees
         $notifService = new \App\Libraries\NotificationService();
-        foreach ($activeEmployees as $emp) {
+        foreach ($employees as $emp) {
             $notifService->send('payroll_ready', (int)$emp['id'], [
                 '{{DETAILS}}'     => "{$monthName} {$year}",
                 '{{ACTION_DATE}}' => date('F j, Y'),
