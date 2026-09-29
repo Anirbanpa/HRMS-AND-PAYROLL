@@ -8,4 +8,3 @@ services:
     envVars:
       - key: CI_ENVIRONMENT
         value: production
-
