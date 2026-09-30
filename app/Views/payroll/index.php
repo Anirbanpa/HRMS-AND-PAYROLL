@@ -60,87 +60,89 @@
     <span class="badge badge-primary">Modules 18, 21 &amp; 22</span>
   </div>
   <div class="card-body" style="padding: 0;">
-    <table class="table" style="margin-bottom: 0;">
-      <thead>
-        <tr>
-          <th>Cycle Title</th>
-          <th>Month / Year</th>
-          <th>Headcount</th>
-          <th>Gross Outlay</th>
-          <th>Statutory Deductions</th>
-          <th>Net Payout</th>
-          <th>Status</th>
-          <th style="text-align: right;">Action</th>
-        </tr>
-      </thead>
-      <tbody>
-        <?php if (empty($runs)): ?>
+    <div class="table-responsive">
+      <table class="table" style="margin-bottom: 0;">
+        <thead>
           <tr>
-            <td colspan="8" style="text-align: center; color: #94a3b8; padding: 36px;">
-              No payroll cycles processed yet. Click "Run Monthly Payroll" above to generate employee payouts.
-            </td>
+            <th>Cycle Title</th>
+            <th>Month / Year</th>
+            <th>Headcount</th>
+            <th>Gross Outlay</th>
+            <th>Statutory Deductions</th>
+            <th>Net Payout</th>
+            <th>Status</th>
+            <th style="text-align: right;">Action</th>
           </tr>
-        <?php else: ?>
-          <?php foreach ($runs as $r): ?>
+        </thead>
+        <tbody>
+          <?php if (empty($runs)): ?>
             <tr>
-              <td>
-                <strong style="color: #0f172a; font-size: 14px;"><?= esc($r['title']) ?></strong>
-              </td>
-              <td><?= esc(date('F', mktime(0,0,0, $r['month'], 10))) ?> <?= esc($r['year']) ?></td>
-              <td>
-                <span class="badge badge-secondary"><?= esc($r['total_employees']) ?> employees</span>
-              </td>
-              <td style="font-weight: 600; color: #0f172a;">
-                ₹<?= number_format($r['total_gross'], 2) ?>
-              </td>
-              <td style="color: #b91c1c; font-weight: 600;">
-                -₹<?= number_format($r['total_deductions'], 2) ?>
-              </td>
-              <td>
-                <strong style="color: #4338ca; font-size: 15px;">₹<?= number_format($r['total_net'], 2) ?></strong>
-              </td>
-              <td>
-                <?php if ($r['status'] === 'disbursed'): ?>
-                  <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #059669; border: 1px solid rgba(16, 185, 129, 0.3);">Disbursed</span>
-                <?php elseif ($r['status'] === 'frozen'): ?>
-                  <span class="badge" style="background: rgba(99, 102, 241, 0.15); color: #4f46e5; border: 1px solid rgba(99, 102, 241, 0.3);">Frozen</span>
-                <?php elseif ($r['status'] === 'draft'): ?>
-                  <span class="badge badge-warning">Draft</span>
-                <?php else: ?>
-                  <span class="badge badge-success">Processed</span>
-                <?php endif; ?>
-              </td>
-              <td style="text-align: right; white-space: nowrap;">
-                <div style="display: inline-flex; gap: 6px; align-items: center; justify-content: flex-end;">
-                  <a href="<?= site_url('payroll/view/' . $r['id']) ?>" class="btn btn-outline btn-sm" style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; font-size: 12px;" title="View Run &amp; Payslips">
-                    View Run &amp; Payslips &rarr;
-                  </a>
-                  <?php if (in_array('payroll.process', $userPermissions ?? []) || ($currentRoleSlug === 'super_admin')): ?>
-                    <button type="button" class="btn btn-outline btn-sm btn-edit-payroll"
-                            data-run="<?= htmlspecialchars(json_encode($r), ENT_QUOTES, 'UTF-8') ?>"
-                            onclick="openEditPayrollModal(this)"
-                            title="Edit Payroll Cycle"
-                            style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; font-size: 12px;">
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                      Edit
-                    </button>
-                    <?php if (($currentRoleSlug ?? '') === 'super_admin'): ?>
-                    <button type="button" class="btn btn-sm btn-delete-payroll"
-                            onclick="openDeletePayrollModal(<?= (int)$r['id'] ?>, '<?= esc($r['title'], 'js') ?>', '₹<?= number_format($r['total_net'], 2) ?>', <?= (int)$r['total_employees'] ?>)"
-                            title="Delete Payroll Cycle"
-                            style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; font-size: 12px; background: rgba(239, 68, 68, 0.12); color: #dc2626; border: 1px solid rgba(239, 68, 68, 0.25);">
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-                      Delete
-                    </button>
-                    <?php endif; ?>
-                  <?php endif; ?>
-                </div>
+              <td colspan="8" style="text-align: center; color: #94a3b8; padding: 36px;">
+                No payroll cycles processed yet. Click "Run Monthly Payroll" above to generate employee payouts.
               </td>
             </tr>
-          <?php endforeach; ?>
-        <?php endif; ?>
-      </tbody>
-    </table>
+          <?php else: ?>
+            <?php foreach ($runs as $r): ?>
+              <tr>
+                <td>
+                  <strong style="color: #0f172a; font-size: 14px;"><?= esc($r['title']) ?></strong>
+                </td>
+                <td><?= esc(date('F', mktime(0,0,0, $r['month'], 10))) ?> <?= esc($r['year']) ?></td>
+                <td>
+                  <span class="badge badge-secondary"><?= esc($r['total_employees']) ?> employees</span>
+                </td>
+                <td style="font-weight: 600; color: #0f172a;">
+                  ₹<?= number_format($r['total_gross'], 2) ?>
+                </td>
+                <td style="color: #b91c1c; font-weight: 600;">
+                  -₹<?= number_format($r['total_deductions'], 2) ?>
+                </td>
+                <td>
+                  <strong style="color: #4338ca; font-size: 15px;">₹<?= number_format($r['total_net'], 2) ?></strong>
+                </td>
+                <td>
+                  <?php if ($r['status'] === 'disbursed'): ?>
+                    <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #059669; border: 1px solid rgba(16, 185, 129, 0.3);">Disbursed</span>
+                  <?php elseif ($r['status'] === 'frozen'): ?>
+                    <span class="badge" style="background: rgba(99, 102, 241, 0.15); color: #4f46e5; border: 1px solid rgba(99, 102, 241, 0.3);">Frozen</span>
+                  <?php elseif ($r['status'] === 'draft'): ?>
+                    <span class="badge badge-warning">Draft</span>
+                  <?php else: ?>
+                    <span class="badge badge-success">Processed</span>
+                  <?php endif; ?>
+                </td>
+                <td style="text-align: right; white-space: nowrap;">
+                  <div style="display: inline-flex; gap: 6px; align-items: center; justify-content: flex-end;">
+                    <a href="<?= site_url('payroll/view/' . $r['id']) ?>" class="btn btn-outline btn-sm" style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; font-size: 12px;" title="View Run &amp; Payslips">
+                      View Run &amp; Payslips &rarr;
+                    </a>
+                    <?php if (in_array('payroll.process', $userPermissions ?? []) || ($currentRoleSlug === 'super_admin')): ?>
+                      <button type="button" class="btn btn-outline btn-sm btn-edit-payroll"
+                              data-run="<?= htmlspecialchars(json_encode($r), ENT_QUOTES, 'UTF-8') ?>"
+                              onclick="openEditPayrollModal(this)"
+                              title="Edit Payroll Cycle"
+                              style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; font-size: 12px;">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        Edit
+                      </button>
+                      <?php if (($currentRoleSlug ?? '') === 'super_admin'): ?>
+                      <button type="button" class="btn btn-sm btn-delete-payroll"
+                              onclick="openDeletePayrollModal(<?= (int)$r['id'] ?>, '<?= esc($r['title'], 'js') ?>', '₹<?= number_format($r['total_net'], 2) ?>', <?= (int)$r['total_employees'] ?>)"
+                              title="Delete Payroll Cycle"
+                              style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; font-size: 12px; background: rgba(239, 68, 68, 0.12); color: #dc2626; border: 1px solid rgba(239, 68, 68, 0.25);">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                        Delete
+                      </button>
+                      <?php endif; ?>
+                    <?php endif; ?>
+                  </div>
+                </td>
+              </tr>
+            <?php endforeach; ?>
+          <?php endif; ?>
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>
 

@@ -64,7 +64,8 @@
     <div class="card-title">Employee Payout &amp; Payslip Ledger (<?= count($items) ?> Records)</div>
   </div>
   <div class="card-body" style="padding: 0;">
-    <table class="table" style="margin-bottom: 0;">
+    <div class="table-responsive">
+      <table class="table" style="margin-bottom: 0;">
       <thead>
         <tr>
           <th>Payslip #</th>
@@ -108,6 +109,7 @@
         <?php endforeach; ?>
       </tbody>
     </table>
+    </div>
   </div>
 </div>
 

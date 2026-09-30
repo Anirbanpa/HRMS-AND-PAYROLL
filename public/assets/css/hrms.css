@@ -719,6 +719,8 @@ a:hover {
   box-shadow: var(--shadow-sm);
   margin-bottom: 24px;
   transition: var(--transition);
+  overflow: hidden; /* Clips all inner elements, tables, and headers to rounded borders */
+  max-width: 100%;
 }
 
 .card:hover {
@@ -731,6 +733,7 @@ a:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
 }
 
 .card-title {
@@ -741,6 +744,17 @@ a:hover {
 
 .card-body {
   padding: 20px;
+  max-width: 100%;
+}
+
+/* Ensure any card-body containing tables or zero-padding automatically scrolls cleanly horizontally without spilling */
+.card-body[style*="padding: 0"],
+.card-body[style*="padding:0"],
+.card-body:has(> .table),
+.card-body:has(> .data-table),
+.card-body:has(> .table-responsive) {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Grid Layouts */
@@ -897,7 +911,9 @@ a:hover {
    ------------------------------------------------------------------------------ */
 .table-responsive {
   width: 100%;
+  max-width: 100%;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .table {
