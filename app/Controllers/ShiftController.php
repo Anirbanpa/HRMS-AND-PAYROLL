@@ -19,6 +19,11 @@ class ShiftController extends BaseController
      */
     public function index()
     {
+        if (!$this->hasRole(['super_admin', 'hr_admin', 'hr_executive', 'manager'])) {
+            $this->session->setFlashdata('error', 'Access Denied: Shift scheduling is restricted to Managers and HR Administration.');
+            return redirect()->to(site_url('dashboard'));
+        }
+
         $shiftModel      = new ShiftModel();
         $allocationModel = new ShiftAllocationModel();
         $employeeModel   = new EmployeeModel();
@@ -26,7 +31,7 @@ class ShiftController extends BaseController
 
         $shifts      = $shiftModel->getShiftsWithAllocationStats();
         $departments = $departmentModel->findAll();
-        $employees   = $employeeModel->where('employment_status', 'active')->findAll();
+        $employees   = $employeeModel->whereIn('employment_status', ['active', 'probation', 'notice_period'])->where('deleted_at', null)->findAll();
 
         $filters = [
             'department_id' => $this->request->getGet('department_id'),
@@ -44,7 +49,7 @@ class ShiftController extends BaseController
             'filters'     => $filters,
         ];
 
-        return $this->render('shifts/index', $data, 'Shift Management & Rotational Roster');
+        return $this->render('shifts/index', $data, 'Shift and Rotation');
     }
 
     /**
@@ -157,8 +162,8 @@ class ShiftController extends BaseController
      */
     public function delete($id)
     {
-        if (!$this->hasRole(['super_admin', 'hr_admin'])) {
-            $this->session->setFlashdata('error', 'Unauthorized access to delete shifts.');
+        if (($this->currentUser['role_slug'] ?? '') !== 'super_admin') {
+            $this->session->setFlashdata('error', 'Access Denied: Only Super Admin is authorized to delete shifts.');
             return redirect()->to(site_url('shifts'));
         }
 
@@ -182,8 +187,8 @@ class ShiftController extends BaseController
      */
     public function deallocate($id)
     {
-        if (!$this->hasRole(['super_admin', 'hr_admin', 'hr_executive', 'manager'])) {
-            $this->session->setFlashdata('error', 'Unauthorized access to delete shift allocations.');
+        if (($this->currentUser['role_slug'] ?? '') !== 'super_admin') {
+            $this->session->setFlashdata('error', 'Access Denied: Only Super Admin is authorized to remove shift allocations.');
             return redirect()->to(site_url('shifts'));
         }
 
@@ -317,6 +322,6 @@ class ShiftController extends BaseController
             'empShiftMap'  => $empShiftMap,
         ];
 
-        return $this->render('shifts/roster', $data, 'Shift Roster & Rota Planner');
+        return $this->render('shifts/roster', $data, 'Shift Roster & Rotation Planner');
     }
 }

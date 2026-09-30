@@ -18,12 +18,17 @@ class BonusController extends BaseController
      */
     public function index()
     {
+        if (!$this->hasRole(['super_admin', 'hr_admin', 'payroll_manager'])) {
+            $this->session->setFlashdata('error', 'Access Denied: Bonus & Incentives management requires Payroll or HR Admin authorization.');
+            return redirect()->to(site_url('dashboard'));
+        }
+
         $schemeModel    = new BonusSchemeModel();
         $incentiveModel = new EmployeeIncentiveModel();
         $employeeModel  = new EmployeeModel();
 
         $schemes    = $schemeModel->findAll();
-        $employees  = $employeeModel->where('employment_status', 'active')->findAll();
+        $employees  = $employeeModel->whereIn('employment_status', ['active', 'probation'])->where('deleted_at', null)->findAll();
         $incentives = $incentiveModel->getDetailedIncentives();
 
         $totalAllocated = 0.0;

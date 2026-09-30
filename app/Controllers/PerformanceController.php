@@ -45,6 +45,24 @@ class PerformanceController extends BaseController
         $isHR           = $this->hasRole(['super_admin', 'hr_admin', 'hr_executive']);
         $isManager      = $this->hasRole(['manager']);
 
+        // Sanitize cycle status and locate selected cycle
+        $selectedCycle = null;
+        foreach ($cycles as &$c) {
+            if (empty($c['status'])) {
+                $c['status'] = 'active';
+                $cycleModel->update($c['id'], ['status' => 'active']);
+            }
+            if ((int)$c['id'] === $selectedCycleId) {
+                $selectedCycle = $c;
+            }
+        }
+        unset($c);
+
+        if (!$selectedCycle && !empty($cycles)) {
+            $selectedCycle = $cycles[0];
+            $selectedCycleId = (int)$selectedCycle['id'];
+        }
+
         // 1. My Goals & Appraisal for selected cycle
         $myGoals = [];
         $myAppraisal = null;
@@ -57,6 +75,11 @@ class PerformanceController extends BaseController
                 ->first();
         }
 
+        $totalWeightage = 0;
+        foreach ($myGoals as $g) {
+            $totalWeightage += (float)($g['weightage_percent'] ?? 0);
+        }
+
         // 2. Team Appraisals under review for Managers and HR
         $teamAppraisals = [];
         if ($isHR || $isManager) {
@@ -65,7 +88,7 @@ class PerformanceController extends BaseController
                 ->join('departments d', 'd.id = e.department_id', 'left')
                 ->join('designations des', 'des.id = e.designation_id', 'left')
                 ->join('employee_appraisals ea', "ea.employee_id = e.id AND ea.cycle_id = {$selectedCycleId}", 'left')
-                ->where('e.employment_status', 'active')
+                ->whereIn('e.employment_status', ['active', 'probation'])
                 ->where('e.deleted_at', null);
 
             if (!$isHR && $currentEmpId) {
@@ -75,17 +98,31 @@ class PerformanceController extends BaseController
             $teamAppraisals = $builder->orderBy('e.first_name', 'ASC')->get()->getResultArray();
         }
 
-        $employees = $empModel->where('employment_status', 'active')->where('deleted_at', null)->findAll();
+        $teamPendingCount = 0;
+        $teamCompletedCount = 0;
+        foreach ($teamAppraisals as $t) {
+            if (!empty($t['overall_manager_score']) || ($t['appraisal_status'] ?? '') === 'completed') {
+                $teamCompletedCount++;
+            } else {
+                $teamPendingCount++;
+            }
+        }
+
+        $employees = $empModel->whereIn('employment_status', ['active', 'probation'])->where('deleted_at', null)->findAll();
 
         $data = [
-            'cycles'          => $cycles,
-            'selectedCycleId' => $selectedCycleId,
-            'myGoals'         => $myGoals,
-            'myAppraisal'     => $myAppraisal,
-            'teamAppraisals'  => $teamAppraisals,
-            'employees'       => $employees,
-            'isHR'            => $isHR,
-            'isManager'       => $isManager,
+            'cycles'             => $cycles,
+            'selectedCycle'      => $selectedCycle,
+            'selectedCycleId'    => $selectedCycleId,
+            'myGoals'            => $myGoals,
+            'myAppraisal'        => $myAppraisal,
+            'totalWeightage'     => $totalWeightage,
+            'teamAppraisals'     => $teamAppraisals,
+            'teamPendingCount'   => $teamPendingCount,
+            'teamCompletedCount' => $teamCompletedCount,
+            'employees'          => $employees,
+            'isHR'               => $isHR,
+            'isManager'          => $isManager,
         ];
 
         return $this->render('performance/index', $data, 'Performance Management & Appraisals');
@@ -210,6 +247,8 @@ class PerformanceController extends BaseController
         $goalRatings = (array)$this->request->getPost('goal_ratings');
         $goalComments = (array)$this->request->getPost('goal_comments');
         $overallScore = (float)$this->request->getPost('overall_self_score');
+        $strengths    = trim($this->request->getPost('key_strengths') ?? '');
+        $devAreas     = trim($this->request->getPost('development_areas') ?? '');
 
         $goalModel      = new PerformanceGoalModel();
         $appraisalModel = new EmployeeAppraisalModel();
@@ -228,22 +267,28 @@ class PerformanceController extends BaseController
 
         // Create or update employee_appraisals record
         $existing = $appraisalModel->where('employee_id', $employeeId)->where('cycle_id', $cycleId)->first();
+        $appraisalData = [
+            'overall_self_score' => $overallScore,
+            'status'             => 'self_submitted',
+        ];
+        if (!empty($strengths)) {
+            $appraisalData['key_strengths'] = $strengths;
+        }
+        if (!empty($devAreas)) {
+            $appraisalData['development_areas'] = $devAreas;
+        }
+
         if ($existing) {
-            $appraisalModel->update($existing['id'], [
-                'overall_self_score' => $overallScore,
-                'status'             => 'self_submitted',
-            ]);
+            $appraisalModel->update($existing['id'], $appraisalData);
         } else {
             $empModel = new EmployeeModel();
             $emp = $empModel->find($employeeId);
 
-            $appraisalModel->insert([
-                'cycle_id'            => $cycleId,
-                'employee_id'         => $employeeId,
-                'reviewer_manager_id' => $emp['reporting_to'] ?? 1,
-                'overall_self_score'  => $overallScore,
-                'status'              => 'self_submitted',
-            ]);
+            $appraisalData['cycle_id']            = $cycleId;
+            $appraisalData['employee_id']         = $employeeId;
+            $appraisalData['reviewer_manager_id'] = $emp['reporting_to'] ?? 1;
+
+            $appraisalModel->insert($appraisalData);
         }
 
         $this->logAudit('SELF_APPRAISAL_SUBMIT', 'performance', "Submitted self-assessment (Score: {$overallScore}) for cycle #{$cycleId}");
@@ -320,6 +365,30 @@ class PerformanceController extends BaseController
 
         $this->logAudit('MANAGER_APPRAISAL_SUBMIT', 'performance', "Completed manager appraisal for employee #{$employeeId} (Band: {$ratingBand})");
         $this->session->setFlashdata('success', "Manager review and appraisal band '{$ratingBand}' saved successfully.");
+        return redirect()->to(site_url('performance?cycle_id=' . $cycleId));
+    }
+
+    /**
+     * Delete a Goal / KPI
+     */
+    public function deleteGoal($id)
+    {
+        if (($this->currentUser['role_slug'] ?? '') !== 'super_admin') {
+            $this->session->setFlashdata('error', 'Access Denied: Only Super Admin is authorized to delete goals.');
+            return redirect()->to(site_url('performance'));
+        }
+
+        $goalModel = new PerformanceGoalModel();
+        $goal = $goalModel->find((int)$id);
+        if (!$goal) {
+            $this->session->setFlashdata('error', 'Goal not found.');
+            return redirect()->to(site_url('performance'));
+        }
+
+        $cycleId = $goal['cycle_id'];
+        $goalModel->delete((int)$id);
+        $this->logAudit('GOAL_DELETE', 'performance', "Deleted goal '{$goal['title']}' (ID: {$id})");
+        $this->session->setFlashdata('success', 'Goal removed successfully.');
         return redirect()->to(site_url('performance?cycle_id=' . $cycleId));
     }
 }

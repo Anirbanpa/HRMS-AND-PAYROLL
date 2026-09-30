@@ -26,8 +26,13 @@ class RecruitmentController extends BaseController
     /**
      * Recruitment & ATS Dashboard / Pipeline
      */
-    public function index(): string
+    public function index()
     {
+        if (!$this->hasRole(['super_admin', 'hr_admin', 'hr_executive'])) {
+            $this->session->setFlashdata('error', 'Access Denied: Recruitment & ATS is restricted to Human Resources personnel.');
+            return redirect()->to(site_url('dashboard'));
+        }
+
         $jobs = $this->jobModel->getOpeningsWithDetails();
         $candidates = $this->candidateModel->getCandidatesWithJob();
 

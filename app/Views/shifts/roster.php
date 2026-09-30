@@ -1,7 +1,7 @@
 <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
   <div>
     <h2 style="font-size: 24px; font-weight: 800; color: var(--color-slate-900); letter-spacing: -0.02em;">
-      Shift Roster &amp; Rota Planner
+      Shift and Rotation Planner
     </h2>
     <p style="font-size: 13.5px; color: var(--color-slate-500); margin-top: 2px;">
       Multi-department shift rotation matrix and staff scheduling calendar.
@@ -113,7 +113,7 @@ $daysCount = count($dates);
   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
     <div>
       <h3 style="font-size: 16px; font-weight: 700; color: var(--color-slate-900);">
-        <?= ($selectedDept === 'all') ? 'All Departments Rota Matrix' : 'Department Staffing Schedule' ?>
+        <?= ($selectedDept === 'all') ? 'All Departments Rotation Matrix' : 'Department Staffing Schedule' ?>
       </h3>
       <div style="font-size: 12.5px; color: var(--color-slate-500); margin-top: 3px;">
         Showing <strong><?= $daysCount ?> days</strong> (<?= date('M j, Y', strtotime($startDate)) ?> &ndash; <?= !empty($dates) ? date('M j, Y', strtotime(end($dates))) : date('M j, Y', strtotime($endDate)) ?>) &bull; <strong><?= count($team) ?> team members</strong>

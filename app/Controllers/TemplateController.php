@@ -21,8 +21,13 @@ class TemplateController extends BaseController
     /**
      * Document Template List & Generator Hub
      */
-    public function index(): string
+    public function index()
     {
+        if (!$this->hasRole(['super_admin', 'hr_admin', 'hr_executive'])) {
+            $this->session->setFlashdata('error', 'Access Denied: Document Templates is restricted to Human Resources personnel.');
+            return redirect()->to(site_url('dashboard'));
+        }
+
         $templates = $this->tplModel->findAll();
         $employees = $this->employeeModel->where('deleted_at', null)->orderBy('first_name', 'ASC')->findAll();
 
@@ -188,6 +193,10 @@ class TemplateController extends BaseController
      */
     public function delete(int $id): ResponseInterface
     {
+        if (($this->currentUser['role_slug'] ?? '') !== 'super_admin') {
+            return redirect()->to(site_url('templates'))->with('error', 'Access Denied: Only Super Admin is authorized to delete document templates.');
+        }
+
         $template = $this->tplModel->find($id);
         if (!$template) {
             return redirect()->to(site_url('templates'))->with('error', "Template #{$id} not found.");

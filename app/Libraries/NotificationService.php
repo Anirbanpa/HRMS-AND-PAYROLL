@@ -139,7 +139,7 @@ class NotificationService
      */
     public function broadcast(string $title, string $message, string $targetAudience = 'all', ?int $targetId = null): int
     {
-        $builder = $this->employeeModel->where('employment_status', 'active')->where('deleted_at', null);
+        $builder = $this->employeeModel->whereIn('employment_status', ['active', 'probation', 'notice_period'])->where('deleted_at', null);
 
         if ($targetAudience === 'department' && $targetId) {
             $builder->where('department_id', $targetId);

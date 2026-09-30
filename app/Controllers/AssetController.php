@@ -23,8 +23,13 @@ class AssetController extends BaseController
     /**
      * Asset Management Overview & Registry
      */
-    public function index(): string
+    public function index()
     {
+        if (!$this->hasRole(['super_admin', 'hr_admin'])) {
+            $this->session->setFlashdata('error', 'Access Denied: Asset Management requires administrator privileges.');
+            return redirect()->to(site_url('dashboard'));
+        }
+
         $statusFilter = $this->request->getGet('status') ?? '';
         $categoryFilter = $this->request->getGet('category') ?? '';
 
@@ -33,7 +38,10 @@ class AssetController extends BaseController
         if (!empty($categoryFilter)) $filters['category'] = $categoryFilter;
 
         $assets = $this->assetModel->getAssetsWithAssigned($filters);
-        $employees = $this->employeeModel->where('deleted_at', null)->orderBy('first_name', 'ASC')->findAll();
+        $employees = $this->employeeModel->where('deleted_at', null)
+            ->whereNotIn('employment_status', ['terminated', 'resigned', 'retired'])
+            ->orderBy('first_name', 'ASC')
+            ->findAll();
         $allocations = $this->allocModel->getAllocationsWithDetails();
 
         // Calculate KPI Metrics

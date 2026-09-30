@@ -26,6 +26,11 @@ class ManagerController extends BaseController
         $isAdmin      = $this->hasRole(['super_admin', 'hr_admin']);
         $isManager    = $this->hasRole(['manager', 'hr_executive', 'payroll_manager']);
 
+        if (!$isAdmin && !$isManager) {
+            $this->session->setFlashdata('error', 'Access Denied: Manager Self-Service requires managerial or supervisory authority.');
+            return redirect()->to(site_url('dashboard'));
+        }
+
         // Allow access to admins even if employee record is not linked
         if (!$currentEmpId && !$isAdmin) {
             $this->session->setFlashdata('warning', 'No active employee profile linked to your user account.');

@@ -35,7 +35,7 @@ class PayrollController extends BaseController
         $activeStructuresCount = $db->table('salary_structures ss')
             ->join('employees e', 'e.id = ss.employee_id')
             ->where('e.deleted_at', null)
-            ->where('e.employment_status', 'active')
+            ->whereIn('e.employment_status', ['active', 'probation', 'notice_period'])
             ->countAllResults();
 
         $data = [
@@ -102,9 +102,9 @@ class PayrollController extends BaseController
             $itemModel->where('payroll_run_id', $runId)->delete();
         }
 
-        // Fetch all active employees
+        // Fetch all eligible employees (active, probation, notice period)
         $empModel = new EmployeeModel();
-        $employees = $empModel->where('employment_status', 'active')
+        $employees = $empModel->whereIn('employment_status', ['active', 'probation', 'notice_period'])
             ->where('deleted_at', null)
             ->findAll();
 
@@ -421,8 +421,8 @@ class PayrollController extends BaseController
      */
     public function delete(int $id)
     {
-        if (!$this->hasPermission('payroll.process')) {
-            $this->session->setFlashdata('error', 'Access Denied: You do not have authorization to delete payroll cycles.');
+        if (($this->currentUser['role_slug'] ?? '') !== 'super_admin') {
+            $this->session->setFlashdata('error', 'Access Denied: Only Super Admin is authorized to delete payroll cycles.');
             return redirect()->to(site_url('payroll'));
         }
 

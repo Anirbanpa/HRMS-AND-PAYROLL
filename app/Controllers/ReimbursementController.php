@@ -122,11 +122,13 @@ class ReimbursementController extends BaseController
         return redirect()->to(site_url('reimbursements'));
     }
 
-    /**
-     * Approve Claim (Manager or Finance Stage)
-     */
     public function approve($id)
     {
+        if (!$this->hasRole(['super_admin', 'accountant', 'payroll_manager', 'hr_admin', 'manager'])) {
+            $this->session->setFlashdata('error', 'Unauthorized to approve claims.');
+            return redirect()->to(site_url('reimbursements'));
+        }
+
         $reimbModel = new ReimbursementRequestModel();
         $claim = $reimbModel->find((int)$id);
         if (!$claim) {
@@ -168,6 +170,11 @@ class ReimbursementController extends BaseController
      */
     public function reject($id)
     {
+        if (!$this->hasRole(['super_admin', 'accountant', 'payroll_manager', 'hr_admin', 'manager'])) {
+            $this->session->setFlashdata('error', 'Unauthorized to reject claims.');
+            return redirect()->to(site_url('reimbursements'));
+        }
+
         $reimbModel = new ReimbursementRequestModel();
         $claim = $reimbModel->find((int)$id);
         if (!$claim) {

@@ -45,16 +45,26 @@
           return in_array($perm, $userPermissions ?? [], true);
       };
       ?>
-      <div class="nav-section-title">Core Management</div>
+      <!-- ==========================================
+           1. HR MANAGEMENT
+           ========================================== -->
+      <div class="nav-section-title">1. HR Management</div>
       <a href="<?= site_url('dashboard') ?>" id="navDashboard" class="nav-item <?= (current_url() == site_url('dashboard')) ? 'active' : '' ?>">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
-        <span>HRMS Dashboard</span>
+        <span>Dashboard</span>
       </a>
 
       <?php if ($can('employee.view')): ?>
       <a href="<?= site_url('employees') ?>" id="navEmployees" class="nav-item <?= (strpos(current_url(), 'employees') !== false) ? 'active' : '' ?>">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         <span>Employee Directory</span>
+      </a>
+      <?php endif; ?>
+
+      <?php if ($can('employee.create')): ?>
+      <a href="<?= site_url('recruitment') ?>" id="navRecruitment" class="nav-item <?= (strpos(current_url(), 'recruitment') !== false) ? 'active' : '' ?>">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+        <span>Recruitment &amp; ATS</span>
       </a>
       <?php endif; ?>
 
@@ -77,12 +87,41 @@
       </a>
       <?php endif; ?>
 
-      <?php if ($can('employee.create')): ?>
-      <a href="<?= site_url('recruitment') ?>" id="navRecruitment" class="nav-item <?= (strpos(current_url(), 'recruitment') !== false) ? 'active' : '' ?>">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
-        <span>Recruitment &amp; ATS</span>
+      <?php if ($currentRoleSlug === 'manager' || $currentRoleSlug === 'super_admin' || $can('leave.approve')): ?>
+      <a href="<?= site_url('manager') ?>" id="navManager" class="nav-item <?= (strpos(current_url(), 'manager') !== false) ? 'active' : '' ?>">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span>Manager Portal (MSS)</span>
       </a>
       <?php endif; ?>
+
+      <a href="<?= site_url('performance') ?>" id="navPerformance" class="nav-item <?= (strpos(current_url(), 'performance') !== false) ? 'active' : '' ?>">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><path d="m10 15 5-3-5-3v6Z"/></svg>
+        <span>Performance &amp; OKRs</span>
+      </a>
+
+      <a href="<?= site_url('training') ?>" id="navTraining" class="nav-item <?= (strpos(current_url(), 'training') !== false) ? 'active' : '' ?>">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        <span>Training &amp; Skills</span>
+      </a>
+
+      <?php if ($can('employee.edit')): ?>
+      <a href="<?= site_url('disciplinary') ?>" id="navDisciplinary" class="nav-item <?= (strpos(current_url(), 'disciplinary') !== false) ? 'active' : '' ?>">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <span>Disciplinary Records</span>
+      </a>
+      <?php endif; ?>
+
+      <?php if (in_array($currentRoleSlug, ['super_admin', 'hr_admin', 'payroll_manager']) || $can('payroll.process')): ?>
+      <a href="<?= site_url('separation') ?>" id="navSeparation" class="nav-item <?= (strpos(current_url(), 'separation') !== false) ? 'active' : '' ?>">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" x2="3" y1="12" y2="12"/></svg>
+        <span>Separation &amp; F&amp;F</span>
+      </a>
+      <?php endif; ?>
+
+      <!-- ==========================================
+           2. ATTENDANCE & OPERATIONS
+           ========================================== -->
+      <div class="nav-section-title">2. Attendance &amp; Operations</div>
 
       <?php if ($can('attendance.view')): ?>
       <a href="<?= site_url('attendance') ?>" id="navAttendance" class="nav-item <?= (strpos(current_url(), 'attendance') !== false && strpos(current_url(), 'late-early') === false) ? 'active' : '' ?>">
@@ -122,24 +161,33 @@
       </a>
       <?php endif; ?>
 
+
+      <a href="<?= site_url('communication') ?>" id="navCommunication" class="nav-item <?= (strpos(current_url(), 'communication') !== false) ? 'active' : '' ?>">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>
+        <span>Announcements &amp; Comms</span>
+      </a>
+
+      <!-- ==========================================
+           3. PAYROLL & FINANCE
+           ========================================== -->
+      <div class="nav-section-title">3. Payroll &amp; Finance</div>
+
       <?php if ($can('payroll.view')): ?>
       <a href="<?= site_url('payroll') ?>" id="navPayroll" class="nav-item <?= (strpos(current_url(), 'payroll') !== false) ? 'active' : '' ?>">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12"/><path d="M6 8h12"/><path d="m6 13 8.5 8"/><path d="M6 13h3"/><path d="M9 13c6.667 0 6.667-10 0-10"/></svg>
         <span>Monthly Payroll</span>
       </a>
+      <?php endif; ?>
 
       <a href="<?= site_url('loans') ?>" id="navLoans" class="nav-item <?= (strpos(current_url(), 'loans') !== false) ? 'active' : '' ?>">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect width="20" height="12" x="2" y="6" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>
-        <span>Loans &amp; Advances</span>
+        <span><?= ($can('payroll.view')) ? 'Loans &amp; Advances' : 'My Loans &amp; Advances' ?></span>
       </a>
-      <?php endif; ?>
 
-      <?php if ($can('payroll.view') || $can('employee.view')): ?>
       <a href="<?= site_url('reimbursements') ?>" id="navReimbursements" class="nav-item <?= (strpos(current_url(), 'reimbursements') !== false) ? 'active' : '' ?>">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
-        <span>Reimbursements</span>
+        <span><?= ($can('payroll.view') || $currentRoleSlug === 'manager') ? 'Reimbursements' : 'My Claims &amp; Reimbursements' ?></span>
       </a>
-      <?php endif; ?>
 
       <?php if ($can('payroll.process')): ?>
       <a href="<?= site_url('bonuses') ?>" id="navBonuses" class="nav-item <?= (strpos(current_url(), 'bonuses') !== false) ? 'active' : '' ?>">
@@ -148,12 +196,15 @@
       </a>
       <?php endif; ?>
 
-      <?php if ($currentRoleSlug === 'manager' || $currentRoleSlug === 'super_admin' || $can('leave.approve')): ?>
-      <a href="<?= site_url('manager') ?>" id="navManager" class="nav-item <?= (strpos(current_url(), 'manager') !== false) ? 'active' : '' ?>">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-        <span>Manager Portal (MSS)</span>
+      <a href="<?= site_url('travel') ?>" id="navPayrollTravel" class="nav-item <?= (strpos(current_url(), 'travel') !== false) ? 'active' : '' ?>">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>
+        <span>Travel &amp; Expense</span>
       </a>
-      <?php endif; ?>
+
+      <!-- ==========================================
+           4. ASSET & ADMINISTRATION
+           ========================================== -->
+      <div class="nav-section-title">4. Asset &amp; Administration</div>
 
       <?php if ($can('company.manage')): ?>
       <a href="<?= site_url('asset-management') ?>" id="navAssets" class="nav-item <?= (strpos(current_url(), 'asset-management') !== false) ? 'active' : '' ?>">
@@ -167,42 +218,12 @@
         <span>Policies &amp; Circulars</span>
       </a>
 
-      <?php if ($can('employee.delete') || $can('payroll.process')): ?>
-      <a href="<?= site_url('separation') ?>" id="navSeparation" class="nav-item <?= (strpos(current_url(), 'separation') !== false) ? 'active' : '' ?>">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" x2="3" y1="12" y2="12"/></svg>
-        <span>Separation &amp; F&amp;F</span>
-      </a>
-      <?php endif; ?>
+      <!-- ==========================================
+           5. REPORTS & TOOLS
+           ========================================== -->
+      <?php if ($can('reports.view') || ($can('employee.view') && in_array($currentRoleSlug, ['super_admin', 'hr_admin', 'hr_executive'])) || $can('company.manage')): ?>
+      <div class="nav-section-title">5. Reports &amp; Tools</div>
 
-      <a href="<?= site_url('performance') ?>" id="navPerformance" class="nav-item <?= (strpos(current_url(), 'performance') !== false) ? 'active' : '' ?>">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><path d="m10 15 5-3-5-3v6Z"/></svg>
-        <span>Performance &amp; OKRs</span>
-      </a>
-
-      <a href="<?= site_url('training') ?>" id="navTraining" class="nav-item <?= (strpos(current_url(), 'training') !== false) ? 'active' : '' ?>">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-        <span>Training &amp; Skills</span>
-      </a>
-
-      <a href="<?= site_url('travel') ?>" id="navTravel" class="nav-item <?= (strpos(current_url(), 'travel') !== false) ? 'active' : '' ?>">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>
-        <span>Travel &amp; Expense</span>
-      </a>
-
-      <a href="<?= site_url('communication') ?>" id="navCommunication" class="nav-item <?= (strpos(current_url(), 'communication') !== false) ? 'active' : '' ?>">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>
-        <span>Announcements &amp; Comms</span>
-      </a>
-
-      <?php if ($can('employee.edit')): ?>
-      <a href="<?= site_url('disciplinary') ?>" id="navDisciplinary" class="nav-item <?= (strpos(current_url(), 'disciplinary') !== false) ? 'active' : '' ?>">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-        <span>Disciplinary Records</span>
-      </a>
-      <?php endif; ?>
-
-      <?php if ($can('reports.view') || ($can('employee.view') && in_array($currentRoleSlug, ['super_admin', 'hr_admin', 'hr_executive']))): ?>
-      <div class="nav-section-title">Reports &amp; Tools</div>
       <?php if ($can('reports.view')): ?>
       <a href="<?= site_url('reports') ?>" id="navReports" class="nav-item <?= (strpos(current_url(), 'reports') !== false) ? 'active' : '' ?>">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
@@ -218,8 +239,11 @@
       <?php endif; ?>
       <?php endif; ?>
 
-      <?php if ($can('company.manage') || $can('roles.manage') || $can('audit.view')): ?>
-      <div class="nav-section-title">Enterprise Setup</div>
+      <!-- ==========================================
+           6. ENTERPRISE SETUP
+           ========================================== -->
+      <div class="nav-section-title">6. Enterprise Setup</div>
+
       <?php if ($can('company.manage')): ?>
       <a href="<?= site_url('organization') ?>" id="navOrganization" class="nav-item <?= (strpos(current_url(), 'organization') !== false) ? 'active' : '' ?>">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>
@@ -246,11 +270,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         <span>API Integrations</span>
       </a>
-      <a href="<?= site_url('settings/backup') ?>" id="navBackup" class="nav-item <?= (strpos(current_url(), 'settings/backup') !== false) ? 'active' : '' ?>">
+      <a href="<?= site_url('settings/backup') ?>" id="navEnterpriseBackup" class="nav-item <?= (strpos(current_url(), 'settings/backup') !== false) ? 'active' : '' ?>">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
         <span>Database Backup</span>
       </a>
-      <?php endif; ?>
       <?php endif; ?>
 
       <a href="<?= site_url('profile') ?>" id="navProfile" class="nav-item <?= (strpos(current_url(), 'profile') !== false) ? 'active' : '' ?>">

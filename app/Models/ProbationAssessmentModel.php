@@ -56,6 +56,9 @@ class ProbationAssessmentModel extends BaseModel
             ->join('employees m', 'm.id = probation_assessments.manager_id', 'left')
             ->join('users u', 'u.id = probation_assessments.hr_id', 'left');
 
+        $builder->where('e.deleted_at', null)
+            ->whereNotIn('e.employment_status', ['terminated', 'resigned', 'retired']);
+
         if (!empty($filters['employee_id'])) {
             $builder->where('probation_assessments.employee_id', $filters['employee_id']);
         }
@@ -66,6 +69,9 @@ class ProbationAssessmentModel extends BaseModel
             $builder->where('e.reporting_to', $filters['manager_id']);
         }
 
-        return $builder->orderBy('probation_assessments.current_probation_end_date', 'ASC')->limit($limit)->findAll();
+        return $builder->orderBy("CASE WHEN probation_assessments.assessment_status IN ('due', 'under_review', 'extended') THEN 0 ELSE 1 END", 'ASC', false)
+            ->orderBy('probation_assessments.current_probation_end_date', 'ASC')
+            ->limit($limit)
+            ->findAll();
     }
 }

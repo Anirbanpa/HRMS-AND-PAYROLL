@@ -124,6 +124,7 @@
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                       Edit
                     </button>
+                    <?php if (($currentRoleSlug ?? '') === 'super_admin'): ?>
                     <button type="button" class="btn btn-sm btn-delete-payroll"
                             onclick="openDeletePayrollModal(<?= (int)$r['id'] ?>, '<?= esc($r['title'], 'js') ?>', '₹<?= number_format($r['total_net'], 2) ?>', <?= (int)$r['total_employees'] ?>)"
                             title="Delete Payroll Cycle"
@@ -131,6 +132,7 @@
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
                       Delete
                     </button>
+                    <?php endif; ?>
                   <?php endif; ?>
                 </div>
               </td>
@@ -290,6 +292,7 @@
 <!-- ============================================================== -->
 <!-- 3. DELETE PAYROLL RUN CONFIRMATION MODAL                       -->
 <!-- ============================================================== -->
+<?php if (($currentRoleSlug ?? '') === 'super_admin'): ?>
 <div id="modalDeletePayrollRun" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 16px;">
   <div class="card" style="width: 100%; max-width: 480px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35); border: 1px solid var(--border-color, #e2e8f0); border-radius: 14px; overflow: hidden; background: var(--bg-card, #ffffff); margin: 0;">
     <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color, #e2e8f0); padding: 18px 24px;">
@@ -336,6 +339,7 @@
     </div>
   </div>
 </div>
+<?php endif; ?>
 
 <script>
 function openEditPayrollModal(btn) {

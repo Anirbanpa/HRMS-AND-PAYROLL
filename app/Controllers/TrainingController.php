@@ -26,7 +26,7 @@ class TrainingController extends BaseController
         $db               = \Config\Database::connect();
 
         $trainings = $trainingModel->orderBy('start_date', 'DESC')->findAll();
-        $employees = $employeeModel->where('employment_status', 'active')->where('deleted_at', null)->findAll();
+        $employees = $employeeModel->whereIn('employment_status', ['active', 'probation', 'notice_period'])->where('deleted_at', null)->findAll();
         $currentEmpId = $this->currentUser['employee_id'] ?? null;
         $isHR = $this->hasRole(['super_admin', 'hr_admin', 'hr_executive']);
 

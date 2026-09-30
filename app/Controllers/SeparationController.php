@@ -25,13 +25,36 @@ class SeparationController extends BaseController
         $this->employeeModel = new EmployeeModel();
     }
 
-    /**
-     * Separation & F&F Dashboard
-     */
-    public function index(): string
+    public function index()
     {
+        if (!$this->hasRole(['super_admin', 'hr_admin', 'payroll_manager'])) {
+            $this->session->setFlashdata('error', 'Access Denied: Separation & F&F is restricted to HR and Payroll Administration.');
+            return redirect()->to(site_url('dashboard'));
+        }
+
+        // Auto-synchronize employees set to resigned or notice_period in Directory
+        $separatingStaff = $this->employeeModel->whereIn('employment_status', ['resigned', 'notice_period'])
+            ->where('deleted_at', null)
+            ->findAll();
+        foreach ($separatingStaff as $st) {
+            $existing = $this->resigModel->where('employee_id', $st['id'])->first();
+            if (!$existing) {
+                $this->resigModel->insert([
+                    'employee_id'                => $st['id'],
+                    'resignation_date'           => date('Y-m-d'),
+                    'requested_last_working_day' => date('Y-m-d', strtotime('+30 days')),
+                    'approved_last_working_day'  => date('Y-m-d', strtotime('+30 days')),
+                    'reason'                     => 'Status updated in Employee Master Directory (' . ucfirst(str_replace('_', ' ', $st['employment_status'])) . ')',
+                    'status'                     => ($st['employment_status'] === 'notice_period') ? 'in_clearance' : 'submitted',
+                ]);
+            }
+        }
+
         $resignations = $this->resigModel->getResignationsWithEmployee();
-        $employees = $this->employeeModel->where('deleted_at', null)->orderBy('first_name', 'ASC')->findAll();
+        $employees = $this->employeeModel->where('deleted_at', null)
+            ->whereNotIn('employment_status', ['terminated', 'resigned', 'retired'])
+            ->orderBy('first_name', 'ASC')
+            ->findAll();
 
         // Attach clearances to each resignation
         foreach ($resignations as &$r) {
@@ -108,6 +131,11 @@ class SeparationController extends BaseController
             'approved_last_working_day' => $apprLwd,
             'approver_remarks'          => $remarks,
             'status'                    => 'in_clearance',
+        ]);
+
+        // Sync employee master status to notice_period
+        $this->employeeModel->update($resignation['employee_id'], [
+            'employment_status' => 'notice_period',
         ]);
 
         // Auto-provision 4 Departmental Clearances if not already present

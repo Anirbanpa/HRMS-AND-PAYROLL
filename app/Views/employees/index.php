@@ -141,7 +141,13 @@
                   <a href="<?= site_url('employees/view/' . $emp['id']) ?>" id="btnView360_<?= $emp['id'] ?>" class="btn btn-outline btn-sm">
                     360° Profile
                   </a>
-                  <?php if (($currentRoleSlug ?? '') === 'super_admin' || in_array('employee.delete', $userPermissions ?? [])): ?>
+                  <?php if (($currentRoleSlug ?? '') !== 'employee' && (in_array('employee.edit', $userPermissions ?? []) || in_array($currentRoleSlug ?? '', ['super_admin', 'hr_admin', 'hr_executive']))): ?>
+                    <a href="<?= site_url('employees/edit/' . $emp['id']) ?>" id="btnEditEmp_<?= $emp['id'] ?>" class="btn btn-outline btn-sm" title="Edit Employee">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                      Edit
+                    </a>
+                  <?php endif; ?>
+                  <?php if (($currentRoleSlug ?? '') === 'super_admin'): ?>
                     <button type="button" class="btn btn-danger btn-sm" style="padding: 4px 8px;" onclick="openDeleteDialog(<?= $emp['id'] ?>, '<?= esc(addslashes($emp['first_name'] . ' ' . $emp['last_name'])) ?>', '<?= esc(addslashes($emp['employee_code'])) ?>')" title="Delete Employee">
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                     </button>
@@ -157,7 +163,7 @@
 </div>
 
 <!-- GLOBAL EMPLOYEE DELETE CONFIRMATION MODAL -->
-<?php if (($currentRoleSlug ?? '') === 'super_admin' || in_array('employee.delete', $userPermissions ?? [])): ?>
+<?php if (($currentRoleSlug ?? '') === 'super_admin'): ?>
 <div id="modalDeleteEmpIndex" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 20px;">
   <div style="background: var(--bg-card, #ffffff); border: 1px solid var(--border-color, #e2e8f0); border-radius: 16px; width: 100%; max-width: 480px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4); overflow: hidden; animation: popIn 0.2s ease-out;">
     <div style="padding: 24px; border-bottom: 1px solid var(--border-color, #e2e8f0); display: flex; align-items: center; gap: 14px;">

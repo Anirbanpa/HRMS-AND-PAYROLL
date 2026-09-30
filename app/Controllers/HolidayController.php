@@ -90,8 +90,8 @@ class HolidayController extends BaseController
      */
     public function delete($id)
     {
-        if (!$this->hasRole(['super_admin', 'hr_admin'])) {
-            $this->session->setFlashdata('error', 'Unauthorized to delete holidays.');
+        if (($this->currentUser['role_slug'] ?? '') !== 'super_admin') {
+            $this->session->setFlashdata('error', 'Access Denied: Only Super Admin is authorized to delete holidays.');
             return redirect()->to(site_url('holidays'));
         }
 

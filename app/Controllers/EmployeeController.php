@@ -170,18 +170,8 @@ class EmployeeController extends BaseController
         try {
             $db->transStart();
 
-            // Handle Profile Photo Upload
+            // Profile photo is managed post-onboarding via the Employee Edit option
             $profilePhotoPath = null;
-            $photoFile = $this->request->getFile('profile_photo');
-            if ($photoFile && $photoFile->isValid() && !$photoFile->hasMoved()) {
-                $uploadDir = FCPATH . 'uploads/avatars';
-                if (!is_dir($uploadDir)) {
-                    mkdir($uploadDir, 0777, true);
-                }
-                $photoName = $photoFile->getRandomName();
-                $photoFile->move($uploadDir, $photoName);
-                $profilePhotoPath = 'uploads/avatars/' . $photoName;
-            }
 
             $empType   = $this->request->getPost('employment_type') ?: 'full_time';
             $empStatus = ($empType === 'probation') ? 'probation' : ($this->request->getPost('employment_status') ?: 'active');
@@ -552,6 +542,14 @@ class EmployeeController extends BaseController
         }
 
         $empStatus = $this->request->getPost('employment_status') ?: $employee['employment_status'];
+        $empType   = $this->request->getPost('employment_type') ?: $employee['employment_type'];
+
+        $probEndDate = $this->request->getPost('probation_end_date');
+        if (empty($probEndDate) && ($empStatus === 'probation' || $empType === 'probation')) {
+            $durationMonths = (int)($this->request->getPost('probation_duration_months') ?: 3);
+            $joinDate = $employee['joining_date'] ?: date('Y-m-d');
+            $probEndDate = date('Y-m-d', strtotime("+{$durationMonths} months", strtotime($joinDate)));
+        }
 
         $updateData = [
             'first_name'         => $firstName,
@@ -569,7 +567,7 @@ class EmployeeController extends BaseController
             'designation_id'     => $this->request->getPost('designation_id') ?: null,
             'pay_grade_id'       => $this->request->getPost('pay_grade_id') ?: null,
             'reporting_to'       => $this->request->getPost('reporting_to') ?: null,
-            'employment_type'    => $this->request->getPost('employment_type') ?: $employee['employment_type'],
+            'employment_type'    => $empType,
             'employment_status'  => $empStatus,
             'present_address'    => trim((string)$this->request->getPost('present_address')),
             'permanent_address'  => trim((string)$this->request->getPost('permanent_address')),
@@ -582,19 +580,92 @@ class EmployeeController extends BaseController
             'emergency_contact_phone' => trim((string)$this->request->getPost('emergency_contact_phone')),
         ];
 
-        // Handle Profile Photo Upload on Update
-        $photoFile = $this->request->getFile('profile_photo');
-        if ($photoFile && $photoFile->isValid() && !$photoFile->hasMoved()) {
-            $uploadDir = FCPATH . 'uploads/avatars';
-            if (!is_dir($uploadDir)) {
-                mkdir($uploadDir, 0777, true);
+        if ($empStatus === 'probation' || $empType === 'probation') {
+            $updateData['probation_end_date'] = $probEndDate ?: ($employee['probation_end_date'] ?: date('Y-m-d', strtotime('+3 months', strtotime($employee['joining_date'] ?: date('Y-m-d')))));
+        }
+
+        // Handle Profile Photo Upload / Removal on Update (Employee Edit Option)
+        $removePhoto = $this->request->getPost('remove_photo');
+        if ($removePhoto === '1') {
+            if (!empty($employee['profile_photo']) && file_exists(FCPATH . $employee['profile_photo'])) {
+                @unlink(FCPATH . $employee['profile_photo']);
             }
-            $photoName = $photoFile->getRandomName();
-            $photoFile->move($uploadDir, $photoName);
-            $updateData['profile_photo'] = 'uploads/avatars/' . $photoName;
+            $updateData['profile_photo'] = null;
+        } else {
+            $photoFile = $this->request->getFile('profile_photo');
+            if ($photoFile && $photoFile->isValid() && !$photoFile->hasMoved()) {
+                if (!empty($employee['profile_photo']) && file_exists(FCPATH . $employee['profile_photo'])) {
+                    @unlink(FCPATH . $employee['profile_photo']);
+                }
+                $uploadDir = FCPATH . 'uploads/avatars';
+                if (!is_dir($uploadDir)) {
+                    mkdir($uploadDir, 0777, true);
+                }
+                $photoName = $photoFile->getRandomName();
+                $photoFile->move($uploadDir, $photoName);
+                $updateData['profile_photo'] = 'uploads/avatars/' . $photoName;
+            }
         }
 
         $employeeModel->update($id, $updateData);
+
+        // Synchronize Confirmation & Probation Assessment
+        $probationModel = new \App\Models\ProbationAssessmentModel();
+        if ($empStatus === 'probation' || $empType === 'probation') {
+            $existingProb = $probationModel->where('employee_id', $id)->orderBy('id', 'DESC')->first();
+            $joinDate = $employee['joining_date'] ?: date('Y-m-d');
+            $endDate = $updateData['probation_end_date'] ?? date('Y-m-d', strtotime('+3 months', strtotime($joinDate)));
+            $isDue = (strtotime($endDate) <= strtotime('+15 days'));
+            $targetStatus = $isDue ? 'due' : 'under_review';
+
+            if (!$existingProb) {
+                $probationModel->insert([
+                    'employee_id'                => $id,
+                    'joining_date'               => $joinDate,
+                    'initial_probation_end_date' => $endDate,
+                    'current_probation_end_date' => $endDate,
+                    'assessment_status'          => $targetStatus,
+                    'manager_id'                 => $updateData['reporting_to'],
+                ]);
+            } else {
+                $probationModel->update($existingProb['id'], [
+                    'assessment_status'          => $targetStatus,
+                    'current_probation_end_date' => $endDate,
+                    'confirmation_date'          => null,
+                    'hr_decision'                => null,
+                    'hr_remarks'                 => null,
+                    'hr_action_at'               => null,
+                    'letter_generated'           => 0,
+                    'manager_id'                 => $updateData['reporting_to'],
+                ]);
+            }
+        } elseif ($empStatus === 'active' && ($employee['employment_status'] === 'probation' || $employee['employment_type'] === 'probation')) {
+            // Transitioned from probation to active: confirm probation assessment
+            $activeProb = $probationModel->where('employee_id', $id)->whereIn('assessment_status', ['due', 'under_review', 'extended'])->first();
+            if ($activeProb) {
+                $probationModel->update($activeProb['id'], [
+                    'assessment_status' => 'confirmed',
+                    'confirmation_date' => date('Y-m-d'),
+                    'hr_decision'       => 'confirmed',
+                    'hr_remarks'        => 'Confirmed via employee master profile update.',
+                    'hr_action_at'      => date('Y-m-d H:i:s'),
+                ]);
+            }
+        } elseif (in_array($empStatus, ['resigned', 'notice_period'])) {
+            // Auto-sync separation if not already submitted
+            $resigModel = new \App\Models\ResignationModel();
+            $existingResig = $resigModel->where('employee_id', $id)->first();
+            if (!$existingResig) {
+                $resigModel->insert([
+                    'employee_id'                => $id,
+                    'resignation_date'           => date('Y-m-d'),
+                    'requested_last_working_day' => date('Y-m-d', strtotime('+30 days')),
+                    'approved_last_working_day'  => date('Y-m-d', strtotime('+30 days')),
+                    'reason'                     => 'Status updated in Employee Master Directory (' . ucfirst(str_replace('_', ' ', $empStatus)) . ')',
+                    'status'                     => ($empStatus === 'notice_period') ? 'in_clearance' : 'submitted',
+                ]);
+            }
+        }
 
         // Sync user role, password, and status if linked
         $db = \Config\Database::connect();
@@ -789,6 +860,12 @@ class EmployeeController extends BaseController
      */
     public function deleteDocument(int $docId)
     {
+        // Enforce: Only Super Admin can delete employee documents
+        if (($this->currentUser['role_slug'] ?? '') !== 'super_admin') {
+            $this->session->setFlashdata('error', 'Access Denied: Only Super Admin is authorized to delete employee documents.');
+            return redirect()->back();
+        }
+
         $db = \Config\Database::connect();
         $doc = $db->table('employee_documents')->where('id', $docId)->get()->getFirstRow('array');
 
@@ -810,9 +887,9 @@ class EmployeeController extends BaseController
      */
     public function delete(int $id)
     {
-        // Enforce RBAC: employee.delete capability required
-        if (!$this->hasPermission('employee.delete')) {
-            $this->session->setFlashdata('error', 'Access Denied: You do not have authorization to delete or archive employees.');
+        // Enforce: Only Super Admin can delete or archive employees
+        if (($this->currentUser['role_slug'] ?? '') !== 'super_admin') {
+            $this->session->setFlashdata('error', 'Access Denied: Only Super Admin is authorized to delete employee data.');
             return redirect()->to(site_url('employees'));
         }
 

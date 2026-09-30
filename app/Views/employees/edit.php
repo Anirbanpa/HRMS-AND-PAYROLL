@@ -29,16 +29,19 @@
       </h3>
 
       <!-- Profile Photo Upload Card -->
+      <?php $hasExistingPhoto = !empty($employee['profile_photo']) && file_exists(FCPATH . $employee['profile_photo']); ?>
       <div style="display: flex; gap: 24px; align-items: center; margin-bottom: 24px; padding: 18px 20px; background: var(--bg-card-subtle, #f8fafc); border: 1.5px dashed var(--border-color, #cbd5e1); border-radius: 12px; flex-wrap: wrap;">
+        <!-- Avatar Preview Box -->
         <div style="position: relative; width: 90px; height: 90px; flex-shrink: 0;">
           <div id="photoPreviewContainer" style="width: 90px; height: 90px; border-radius: 20px; background: #e2e8f0; border: 2px solid var(--border-color); display: flex; align-items: center; justify-content: center; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.06);">
-            <?php if (!empty($employee['profile_photo']) && file_exists(FCPATH . $employee['profile_photo'])): ?>
+            <?php if ($hasExistingPhoto): ?>
               <img id="photoPreviewImg" src="<?= base_url(esc($employee['profile_photo'])) ?>" alt="Profile Preview" style="width: 100%; height: 100%; object-fit: cover;">
               <div id="photoPlaceholder" style="display: none; text-align: center; color: #94a3b8;">
                 <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
                   <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
                   <circle cx="12" cy="13" r="4"/>
                 </svg>
+                <div style="font-size: 9.5px; font-weight: 700; text-transform: uppercase; margin-top: 2px;">Photo</div>
               </div>
             <?php else: ?>
               <img id="photoPreviewImg" src="" alt="Profile Preview" style="display: none; width: 100%; height: 100%; object-fit: cover;">
@@ -52,6 +55,8 @@
             <?php endif; ?>
           </div>
         </div>
+
+        <!-- Upload Details & Trigger -->
         <div style="flex-grow: 1; min-width: 260px;">
           <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
             <label class="form-label" style="font-weight: 700; font-size: 13.5px; margin: 0; color: var(--text-main, #0f172a);">
@@ -60,18 +65,22 @@
             <span class="badge badge-primary" style="font-size: 10px;">ID Badge &amp; Avatar</span>
           </div>
           <p style="font-size: 12px; color: #64748b; margin: 0 0 10px 0; line-height: 1.4;">
-            Upload or replace the employee's headshot. Supported formats: PNG, JPG, WebP (Max 5MB).
+            Upload or replace the employee's headshot for ID badge and directory. Formats: PNG, JPG, WebP (Max 5MB).
           </p>
           <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <input type="hidden" name="remove_photo" id="remove_photo" value="0">
             <label for="profile_photo" class="btn btn-outline btn-sm" style="cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-weight: 600;">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
               </svg>
-              Change Photograph
+              <span id="photoBtnLabel"><?= $hasExistingPhoto ? 'Change Photograph' : 'Choose Photograph' ?></span>
             </label>
             <input type="file" name="profile_photo" id="profile_photo" accept="image/png,image/jpeg,image/jpg,image/webp" style="display: none;" onchange="previewProfilePhoto(this)">
+            <button type="button" id="btnRemovePhoto" class="btn btn-sm" style="<?= $hasExistingPhoto ? 'display: inline-flex;' : 'display: none;' ?> background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; font-weight: 600;" onclick="handlePhotoRemoval()">
+              ✕ Remove Photo
+            </button>
             <span id="photoFilename" style="font-size: 12px; color: #64748b; font-style: italic;">
-              <?= !empty($employee['profile_photo']) ? 'Current photo active on file' : 'No photo uploaded' ?>
+              <?= $hasExistingPhoto ? 'Current photo active on file' : 'No photo uploaded' ?>
             </span>
           </div>
         </div>
@@ -272,7 +281,7 @@
       <div class="grid-3">
         <div class="form-group">
           <label class="form-label" for="pay_grade_id">Salary Band / Pay Grade</label>
-          <select name="pay_grade_id" id="pay_grade_id" class="form-control" onchange="onPayGradeChange(this)">
+          <select name="pay_grade_id" id="pay_grade_id" class="form-control">
             <?php foreach ($payGrades as $pg): ?>
               <option value="<?= esc($pg['id']) ?>" 
                       data-min="<?= (float)$pg['min_salary'] ?>"
@@ -310,6 +319,32 @@
         </div>
       </div>
 
+      <!-- Conditional Probation Duration Setup Panel -->
+      <?php $isProbation = ($employee['employment_status'] === 'probation' || $employee['employment_type'] === 'probation'); ?>
+      <div id="probationSetupWrapperEdit" style="<?= $isProbation ? '' : 'display: none;' ?> background: #fffbeb; border: 1.5px solid #fef3c7; border-radius: 10px; padding: 16px; margin: 12px 0 18px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+          <div style="font-weight: 700; font-size: 13.5px; color: #92400e; display: flex; align-items: center; gap: 8px;">
+            <span>⏱️</span> Probation &amp; Confirmation Period Settings
+          </div>
+          <span class="badge badge-warning" style="font-size: 11px;">Confirmation Tracking Active</span>
+        </div>
+        <div class="grid-2">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" for="probation_duration_months_edit" style="color: #92400e;">Preset Duration</label>
+            <select name="probation_duration_months" id="probation_duration_months_edit" class="form-control" onchange="calcEditProbationDate(this.value)">
+              <option value="1">1 Month</option>
+              <option value="2">2 Months</option>
+              <option value="3" selected>3 Months (Standard)</option>
+              <option value="6">6 Months (Executive/Tech)</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" for="probation_end_date_edit" style="color: #92400e;">Probation End / Evaluation Date</label>
+            <input type="date" name="probation_end_date" id="probation_end_date_edit" class="form-control" value="<?= esc($employee['probation_end_date'] ?? date('Y-m-d', strtotime('+3 months', strtotime($employee['joining_date'] ?: date('Y-m-d'))))) ?>">
+          </div>
+        </div>
+      </div>
+
       <div class="grid-2">
         <div class="form-group">
           <label class="form-label" for="reporting_to">Reporting Manager / Supervisor</label>
@@ -324,259 +359,97 @@
         </div>
       </div>
 
-      <!-- COMPENSATION & MANUAL SALARY INPUT CARD -->
-      <div style="margin: 20px 0 28px; background: var(--bg-card-subtle, #f8fafc); border: 1.5px solid var(--border-color, #e2e8f0); border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
-          <div>
-            <div style="font-weight: 700; font-size: 14px; color: #0f172a; display: flex; align-items: center; gap: 8px;">
-              <span style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 6px; background: rgba(16, 185, 129, 0.12); color: #059669;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h12"/><path d="M6 8h12"/><path d="m6 13 8.5 8"/><path d="M6 13h3"/><path d="M9 13c6.667 0 6.667-10 0-10"/></svg>
-              </span>
-              <span>Manual Salary &amp; Compensation Setup</span>
-            </div>
-            <p style="font-size: 12px; color: #64748b; margin: 4px 0 0 36px;">
-              Specify base monthly compensation or manually fine-tune allowances and statutory withholdings.
-            </p>
+      <!-- 3. BASIC COMPENSATION (NORMAL & MINIMAL) -->
+      <div style="margin: 20px 0 24px; background: var(--bg-card-subtle, #f8fafc); border: 1.5px solid var(--border-color, #e2e8f0); border-radius: 10px; padding: 18px;">
+        <div style="margin-bottom: 14px;">
+          <div style="font-weight: 700; font-size: 14px; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+            <span style="display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 6px; background: rgba(16, 185, 129, 0.12); color: #059669; font-weight: 800; font-size: 14px;">
+              ₹
+            </span>
+            <span>Salary &amp; Compensation</span>
           </div>
-          
-          <!-- Mode switcher -->
-          <div style="display: inline-flex; background: #e2e8f0; padding: 3px; border-radius: 8px; font-size: 12px; font-weight: 600;">
-            <button type="button" id="btnModeAuto" onclick="setSalaryMode('auto')" style="padding: 5px 12px; border: none; border-radius: 6px; background: #ffffff; color: var(--primary, #4f46e5); cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.1); font-weight: 600;">
-              Auto Statutory (40% HRA + 12% PF)
-            </button>
-            <button type="button" id="btnModeCustom" onclick="setSalaryMode('custom')" style="padding: 5px 12px; border: none; border-radius: 6px; background: transparent; color: #64748b; cursor: pointer; font-weight: 600;">
-              Manual Breakdown
-            </button>
-          </div>
-          <input type="hidden" name="salary_mode" id="salary_mode" value="auto">
+          <p style="font-size: 12px; color: #64748b; margin: 3px 0 0 34px;">
+            Specify base monthly salary or CTC. Detailed statutory breakdowns &amp; allowances can be managed in <strong>Monthly Payroll</strong>.
+          </p>
         </div>
 
-        <!-- Base Salary Input Row -->
-        <div class="grid-3" style="margin-bottom: 16px;">
+        <div class="grid-3" style="margin-bottom: 0;">
           <div class="form-group" style="margin-bottom: 0;">
-            <label class="form-label" for="basic_salary" style="font-weight: 700; font-size: 13px; color: #0f172a;">
+            <label class="form-label" for="basic_salary" style="font-weight: 600; font-size: 13px; color: #0f172a;">
               Monthly Basic Salary <span style="color: #ef4444;">*</span>
             </label>
             <div style="position: relative;">
-              <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-weight: 700; color: #64748b; font-size: 15px;">₹</span>
+              <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-weight: 700; color: #64748b; font-size: 14px;">₹</span>
               <input type="number" name="basic_salary" id="basic_salary" class="form-control" 
-                     placeholder="e.g. 35000" min="0" max="1000000" step="500" 
+                     placeholder="e.g. 35000" min="0" step="any" 
                      value="<?= !empty($salaryStructure['basic_salary']) ? (float)$salaryStructure['basic_salary'] : 35000 ?>"
-                     style="padding-left: 28px; font-size: 15px; font-weight: 700; color: #0f172a;"
-                     oninput="calculateSalaryBreakdown()" required>
+                     style="padding-left: 28px; font-weight: 700; font-size: 14.5px;"
+                     oninput="onMinimalBasicInput(this.value)" required>
             </div>
-            <div id="salaryBandFeedback" style="font-size: 11.5px; color: #059669; margin-top: 5px; font-weight: 600; display: flex; align-items: gap: 4px;">
-              <span>✓ Aligned with selected pay band</span>
-            </div>
+            <div style="font-size: 11.5px; color: #64748b; margin-top: 4px;">Base monthly wage component</div>
           </div>
 
           <div class="form-group" style="margin-bottom: 0;">
-            <label class="form-label" style="font-weight: 600; font-size: 13px; color: #64748b;">Quick Band Presets</label>
-            <div style="display: flex; gap: 6px; align-items: center; margin-top: 4px; flex-wrap: wrap;">
-              <button type="button" class="btn btn-outline btn-sm" onclick="applyPresetSalary('min')" style="font-size: 11px; padding: 4px 8px;">Band Min</button>
-              <button type="button" class="btn btn-outline btn-sm" onclick="applyPresetSalary('mid')" style="font-size: 11px; padding: 4px 8px;">Band Mid</button>
-              <button type="button" class="btn btn-outline btn-sm" onclick="applyPresetSalary('max')" style="font-size: 11px; padding: 4px 8px;">Band Max</button>
+            <label class="form-label" for="annual_ctc" style="font-weight: 600; font-size: 13px; color: #0f172a;">
+              Annual CTC (Cost to Company)
+            </label>
+            <div style="position: relative;">
+              <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-weight: 700; color: #64748b; font-size: 14px;">₹</span>
+              <input type="number" name="annual_ctc" id="annual_ctc" class="form-control" 
+                     placeholder="e.g. 600000" min="0" step="any" 
+                     value="<?= !empty($salaryStructure['gross_salary']) ? (float)$salaryStructure['gross_salary'] * 12 : (!empty($salaryStructure['basic_salary']) ? (float)$salaryStructure['basic_salary'] * 12 : 600000) ?>"
+                     style="padding-left: 28px; font-weight: 600; font-size: 14.5px;"
+                     oninput="onMinimalCtcInput(this.value)">
             </div>
-            <div style="font-size: 11.5px; color: #64748b; margin-top: 6px;">
-              Selected Band: <strong id="lblActiveBandName" style="color: #0f172a;">Pay Band</strong>
-            </div>
+            <div style="font-size: 11.5px; color: #64748b; margin-top: 4px;">Approximate package per annum</div>
           </div>
 
           <div class="form-group" style="margin-bottom: 0;">
-            <label class="form-label" style="font-weight: 600; font-size: 13px; color: #64748b;">Annual CTC Equivalent</label>
-            <div id="preview_annual_ctc" style="font-size: 20px; font-weight: 800; color: #0f172a; margin-top: 4px;">
-              ₹0.00 / annum
+            <label class="form-label" style="font-weight: 600; font-size: 13px; color: #64748b;">Estimated Net In-Hand</label>
+            <div id="minimal_net_preview" style="font-size: 18px; font-weight: 800; color: #4338ca; padding-top: 4px;">
+              <?= !empty($salaryStructure['net_salary']) ? '₹' . number_format($salaryStructure['net_salary'], 2) . ' / mo' : '₹47,530.00 / mo' ?>
             </div>
-            <div style="font-size: 11.5px; color: #64748b; margin-top: 4px;">Based on 12-month gross compensation</div>
-          </div>
-        </div>
-
-        <!-- Custom Breakdown Fields (Hidden in Auto mode) -->
-        <div id="customSalaryBreakdown" style="display: none; padding: 16px; background: #ffffff; border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 16px;">
-          <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: #059669; margin-bottom: 10px; letter-spacing: 0.5px;">
-            Manual Earnings &amp; Allowances:
-          </div>
-          <div class="grid-4" style="margin-bottom: 14px;">
-            <div class="form-group" style="margin-bottom: 0;">
-              <label class="form-label" for="hra" style="font-size: 12px;">House Rent Allowance (HRA)</label>
-              <input type="number" name="hra" id="hra" class="form-control form-control-sm" min="0" step="100" 
-                     value="<?= !empty($salaryStructure['hra']) ? (float)$salaryStructure['hra'] : 14000 ?>" oninput="calculateCustomSalary()">
-            </div>
-            <div class="form-group" style="margin-bottom: 0;">
-              <label class="form-label" for="conveyance_allowance" style="font-size: 12px;">Conveyance</label>
-              <input type="number" name="conveyance_allowance" id="conveyance_allowance" class="form-control form-control-sm" min="0" step="50" 
-                     value="<?= !empty($salaryStructure['conveyance_allowance']) ? (float)$salaryStructure['conveyance_allowance'] : 1600 ?>" oninput="calculateCustomSalary()">
-            </div>
-            <div class="form-group" style="margin-bottom: 0;">
-              <label class="form-label" for="special_allowance" style="font-size: 12px;">Special Allowance</label>
-              <input type="number" name="special_allowance" id="special_allowance" class="form-control form-control-sm" min="0" step="100" 
-                     value="<?= !empty($salaryStructure['special_allowance']) ? (float)$salaryStructure['special_allowance'] : 3500 ?>" oninput="calculateCustomSalary()">
-            </div>
-            <div class="form-group" style="margin-bottom: 0;">
-              <label class="form-label" for="medical_allowance" style="font-size: 12px;">Medical Allowance</label>
-              <input type="number" name="medical_allowance" id="medical_allowance" class="form-control form-control-sm" min="0" step="50" 
-                     value="<?= !empty($salaryStructure['medical_allowance']) ? (float)$salaryStructure['medical_allowance'] : 1250 ?>" oninput="calculateCustomSalary()">
-            </div>
-          </div>
-
-          <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: #b91c1c; margin-bottom: 10px; letter-spacing: 0.5px;">
-            Manual Deductions &amp; Withholdings:
-          </div>
-          <div class="grid-3" style="margin-bottom: 0;">
-            <div class="form-group" style="margin-bottom: 0;">
-              <label class="form-label" for="pf_deduction" style="font-size: 12px;">Provident Fund (12%)</label>
-              <input type="number" name="pf_deduction" id="pf_deduction" class="form-control form-control-sm" min="0" step="50" 
-                     value="<?= !empty($salaryStructure['pf_deduction']) ? (float)$salaryStructure['pf_deduction'] : 4200 ?>" oninput="calculateCustomSalary()">
-            </div>
-            <div class="form-group" style="margin-bottom: 0;">
-              <label class="form-label" for="tax_deduction" style="font-size: 12px;">Income Tax TDS (10%)</label>
-              <input type="number" name="tax_deduction" id="tax_deduction" class="form-control form-control-sm" min="0" step="50" 
-                     value="<?= !empty($salaryStructure['tax_deduction']) ? (float)$salaryStructure['tax_deduction'] : 3500 ?>" oninput="calculateCustomSalary()">
-            </div>
-            <div class="form-group" style="margin-bottom: 0;">
-              <label class="form-label" for="insurance_deduction" style="font-size: 12px;">Medical Insurance</label>
-              <input type="number" name="insurance_deduction" id="insurance_deduction" class="form-control form-control-sm" min="0" step="10" 
-                     value="<?= !empty($salaryStructure['insurance_deduction']) ? (float)$salaryStructure['insurance_deduction'] : 120 ?>" oninput="calculateCustomSalary()">
+            <div style="font-size: 11.5px; color: #059669; font-weight: 600; margin-top: 4px;" id="minimal_gross_preview">
+              Gross Monthly: <?= !empty($salaryStructure['gross_salary']) ? '₹' . number_format($salaryStructure['gross_salary'], 2) : '₹55,350.00' ?>
             </div>
           </div>
         </div>
 
-        <!-- Live Calculation Summary Card -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; padding: 14px 18px; background: #ffffff; border: 1px solid var(--border-color); border-radius: 8px;">
-          <div>
-            <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: #64748b;">Basic Pay</div>
-            <div id="disp_basic" style="font-size: 16px; font-weight: 700; color: #0f172a; margin-top: 2px;">₹0.00</div>
-          </div>
-          <div>
-            <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: #059669;">Gross Monthly Outlay</div>
-            <div id="disp_gross" style="font-size: 16px; font-weight: 700; color: #047857; margin-top: 2px;">₹0.00</div>
-          </div>
-          <div>
-            <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: #dc2626;">Total Deductions</div>
-            <div id="disp_deductions" style="font-size: 16px; font-weight: 700; color: #b91c1c; margin-top: 2px;">-₹0.00</div>
-          </div>
-          <div>
-            <div style="font-size: 11px; text-transform: uppercase; font-weight: 800; color: #4338ca;">Estimated Net In-Hand</div>
-            <div id="disp_net" style="font-size: 18px; font-weight: 800; color: #4338ca; margin-top: 2px;">₹0.00</div>
-          </div>
-        </div>
+        <!-- Hidden inputs for backend store -->
+        <input type="hidden" name="salary_mode" id="salary_mode" value="auto">
+        <input type="hidden" name="hra" id="hra" value="<?= !empty($salaryStructure['hra']) ? (float)$salaryStructure['hra'] : 14000 ?>">
+        <input type="hidden" name="conveyance_allowance" id="conveyance_allowance" value="<?= !empty($salaryStructure['conveyance_allowance']) ? (float)$salaryStructure['conveyance_allowance'] : 1600 ?>">
+        <input type="hidden" name="special_allowance" id="special_allowance" value="<?= !empty($salaryStructure['special_allowance']) ? (float)$salaryStructure['special_allowance'] : 3500 ?>">
+        <input type="hidden" name="medical_allowance" id="medical_allowance" value="<?= !empty($salaryStructure['medical_allowance']) ? (float)$salaryStructure['medical_allowance'] : 1250 ?>">
+        <input type="hidden" name="other_allowances" id="other_allowances" value="<?= !empty($salaryStructure['other_allowances']) ? (float)$salaryStructure['other_allowances'] : 0 ?>">
+        <input type="hidden" name="pf_deduction" id="pf_deduction" value="<?= !empty($salaryStructure['pf_deduction']) ? (float)$salaryStructure['pf_deduction'] : 4200 ?>">
+        <input type="hidden" name="tax_deduction" id="tax_deduction" value="<?= !empty($salaryStructure['tax_deduction']) ? (float)$salaryStructure['tax_deduction'] : 200 ?>">
+        <input type="hidden" name="insurance_deduction" id="insurance_deduction" value="<?= !empty($salaryStructure['insurance_deduction']) ? (float)$salaryStructure['insurance_deduction'] : 120 ?>">
       </div>
 
-      <!-- 4. SYSTEM ROLE & PORTAL SECURITY CREDENTIALS -->
-      <h3 style="font-size: 15px; font-weight: 700; color: var(--primary); margin: 24px 0 16px; border-bottom: 1px solid var(--border-color); padding-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
-        <span style="display: flex; align-items: center; gap: 8px;">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
-            <rect width="8" height="6" x="14" y="11" rx="1"/>
-            <path d="M18 11v-2a2 2 0 0 0-4 0v2"/>
-          </svg>
-          4. Portal Access, System Role &amp; Security Credentials
+      <!-- 4. SYSTEM ACCESS, ROLE & PORTAL CREDENTIALS -->
+      <?php $activeRoleId = (int)($user['role_id'] ?? 7); ?>
+      <div style="display: flex; justify-content: space-between; align-items: flex-end; margin: 32px 0 16px; border-bottom: 2px solid var(--border-color); padding-bottom: 8px;">
+        <div>
+          <h3 style="font-size: 16px; font-weight: 700; color: var(--primary); margin: 0; display: flex; align-items: center; gap: 8px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+              <rect width="8" height="6" x="14" y="11" rx="1"/>
+              <path d="M18 11v-2a2 2 0 0 0-4 0v2"/>
+            </svg>
+            4. System Access, Security Role &amp; Login Credentials
+          </h3>
+          <p style="font-size: 13px; color: #64748b; margin: 4px 0 0;">
+            Define whether this employee will be a <strong>Manager</strong>, <strong>Employee (ESS)</strong>, <strong>HR Admin</strong>, <strong>Payroll Manager</strong>, etc., and configure their portal credentials.
+          </p>
+        </div>
+        <span class="badge" style="background: var(--primary-light); color: var(--primary); font-weight: 700; padding: 4px 10px; border-radius: 20px; font-size: 11px;">
+          RBAC Security
         </span>
-        <span style="font-size: 12px; color: var(--primary); font-weight: 600;">
-          Current Role: <span id="lblSelectedRoleName"><?= esc($user['role_name'] ?? 'Employee') ?></span>
-        </span>
-      </h3>
+      </div>
 
+      <!-- System Role Dropdown Selector -->
       <style>
-        .role-cards-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
-          gap: 12px;
-          margin-bottom: 16px;
-        }
-        .role-card {
-          border: 2px solid var(--border-color);
-          background: var(--bg-card, #ffffff);
-          border-radius: 10px;
-          padding: 14px;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          position: relative;
-          display: flex;
-          flex-direction: column;
-          justify-content: space-between;
-        }
-        .role-card:hover {
-          border-color: var(--primary);
-          transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(140, 122, 169, 0.15);
-        }
-        .role-card.active {
-          border-color: var(--primary);
-          background: rgba(140, 122, 169, 0.08);
-          box-shadow: 0 0 0 1px var(--primary);
-        }
-        .role-card-top {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          margin-bottom: 8px;
-        }
-        .role-icon-box {
-          width: 36px;
-          height: 36px;
-          border-radius: 8px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 18px;
-        }
-        .role-pill-badge {
-          font-size: 10px;
-          font-weight: 700;
-          padding: 2px 7px;
-          border-radius: 12px;
-          text-transform: uppercase;
-          letter-spacing: 0.4px;
-        }
-        .role-card-title {
-          font-size: 14px;
-          font-weight: 700;
-          color: var(--text-main, #1e293b);
-          margin-bottom: 4px;
-        }
-        .role-card-desc {
-          font-size: 11px;
-          color: #64748b;
-          line-height: 1.4;
-          flex-grow: 1;
-          margin-bottom: 10px;
-        }
-        .role-card-footer {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          font-size: 11px;
-          font-weight: 600;
-          color: #64748b;
-          padding-top: 8px;
-          border-top: 1px dashed var(--border-color);
-        }
-        .role-card.active .role-card-footer {
-          color: var(--primary);
-        }
-        .role-radio-circle {
-          width: 16px;
-          height: 16px;
-          border-radius: 50%;
-          border: 2px solid var(--border-color);
-          display: inline-block;
-          position: relative;
-        }
-        .role-card.active .role-radio-circle {
-          border-color: var(--primary);
-          background: var(--primary);
-        }
-        .role-card.active .role-radio-circle::after {
-          content: '';
-          position: absolute;
-          width: 6px;
-          height: 6px;
-          background: #ffffff;
-          border-radius: 50%;
-          top: 3px;
-          left: 3px;
-        }
         .portal-auth-card {
           background: var(--bg-card-subtle, #f8fafc);
           border: 1px solid var(--border-color);
@@ -605,124 +478,33 @@
         }
       </style>
 
-      <?php $activeRoleId = (int)($user['role_id'] ?? 7); ?>
-
-      <div class="role-cards-grid">
-        <!-- 1. Super Admin (Tier 1) -->
-        <div class="role-card <?= ($activeRoleId === 1) ? 'active' : '' ?>" data-role-id="1" data-role-slug="super_admin" id="roleCard_1" onclick="selectRole(1)">
-          <div class="role-card-top">
-            <div class="role-icon-box" style="background: rgba(168, 85, 247, 0.15); color: #7e22ce;">👑</div>
-            <span class="role-pill-badge" style="background: rgba(168, 85, 247, 0.15); color: #6b21a8;">Tier 1 &bull; Global Root</span>
-          </div>
-          <div class="role-card-title">Super Administrator</div>
-          <div class="role-card-desc">Global unrestricted system access across all modules, role permissions &amp; tenant settings.</div>
-          <div class="role-card-footer">
-            <span class="role-action-lbl"><?= ($activeRoleId === 1) ? 'Current Role ✓' : 'Click to Set' ?></span>
-            <span class="role-radio-circle"></span>
-          </div>
-        </div>
-
-        <!-- 2. HR Admin (Tier 2) -->
-        <div class="role-card <?= ($activeRoleId === 2) ? 'active' : '' ?>" data-role-id="2" data-role-slug="hr_admin" id="roleCard_2" onclick="selectRole(2)">
-          <div class="role-card-top">
-            <div class="role-icon-box" style="background: rgba(56, 189, 248, 0.15); color: #0284c7;">🛡️</div>
-            <span class="role-pill-badge" style="background: rgba(56, 189, 248, 0.15); color: #0369a1;">Tier 2 &bull; HR Master</span>
-          </div>
-          <div class="role-card-title">HR Administrator</div>
-          <div class="role-card-desc">Full Human Resources authority: onboarding, employee directory, departments, shifts &amp; policies.</div>
-          <div class="role-card-footer">
-            <span class="role-action-lbl"><?= ($activeRoleId === 2) ? 'Current Role ✓' : 'Click to Set' ?></span>
-            <span class="role-radio-circle"></span>
-          </div>
-        </div>
-
-        <!-- 3. HR Executive (Tier 3) -->
-        <div class="role-card <?= ($activeRoleId === 3) ? 'active' : '' ?>" data-role-id="3" data-role-slug="hr_executive" id="roleCard_3" onclick="selectRole(3)">
-          <div class="role-card-top">
-            <div class="role-icon-box" style="background: rgba(16, 185, 129, 0.15); color: #059669;">📋</div>
-            <span class="role-pill-badge" style="background: rgba(16, 185, 129, 0.15); color: #047857;">Tier 3 &bull; Operations</span>
-          </div>
-          <div class="role-card-title">HR Executive</div>
-          <div class="role-card-desc">Day-to-day HR operations: employee records, attendance adjustments &amp; documents.</div>
-          <div class="role-card-footer">
-            <span class="role-action-lbl"><?= ($activeRoleId === 3) ? 'Current Role ✓' : 'Click to Set' ?></span>
-            <span class="role-radio-circle"></span>
-          </div>
-        </div>
-
-        <!-- 4. Payroll Manager (Tier 4) -->
-        <div class="role-card <?= ($activeRoleId === 4) ? 'active' : '' ?>" data-role-id="4" data-role-slug="payroll_manager" id="roleCard_4" onclick="selectRole(4)">
-          <div class="role-card-top">
-            <div class="role-icon-box" style="background: rgba(245, 158, 11, 0.15); color: #d97706;">💰</div>
-            <span class="role-pill-badge" style="background: rgba(245, 158, 11, 0.15); color: #b45309;">Tier 4 &bull; Payroll</span>
-          </div>
-          <div class="role-card-title">Payroll Manager</div>
-          <div class="role-card-desc">Payroll &amp; Compensation. Computes monthly payroll runs, salary structures &amp; tax slips.</div>
-          <div class="role-card-footer">
-            <span class="role-action-lbl"><?= ($activeRoleId === 4) ? 'Current Role ✓' : 'Click to Set' ?></span>
-            <span class="role-radio-circle"></span>
-          </div>
-        </div>
-
-        <!-- 5. Accountant (Tier 5) -->
-        <div class="role-card <?= ($activeRoleId === 5) ? 'active' : '' ?>" data-role-id="5" data-role-slug="accountant" id="roleCard_5" onclick="selectRole(5)">
-          <div class="role-card-top">
-            <div class="role-icon-box" style="background: rgba(244, 114, 182, 0.15); color: #db2777;">📊</div>
-            <span class="role-pill-badge" style="background: rgba(244, 114, 182, 0.15); color: #be185d;">Tier 5 &bull; Finance</span>
-          </div>
-          <div class="role-card-title">Accountant</div>
-          <div class="role-card-desc">Finance auditor &amp; accounts. Reimbursement approvals, advance loans &amp; bank ledger exports.</div>
-          <div class="role-card-footer">
-            <span class="role-action-lbl"><?= ($activeRoleId === 5) ? 'Current Role ✓' : 'Click to Set' ?></span>
-            <span class="role-radio-circle"></span>
-          </div>
-        </div>
-
-        <!-- 6. Manager / Dept Head (Tier 6) -->
-        <div class="role-card <?= ($activeRoleId === 6) ? 'active' : '' ?>" data-role-id="6" data-role-slug="manager" id="roleCard_6" onclick="selectRole(6)">
-          <div class="role-card-top">
-            <div class="role-icon-box" style="background: rgba(251, 146, 60, 0.15); color: #ea580c;">👔</div>
-            <span class="role-pill-badge" style="background: rgba(251, 146, 60, 0.15); color: #c2410c;">Tier 6 &bull; Approvals</span>
-          </div>
-          <div class="role-card-title">Manager / Dept Head</div>
-          <div class="role-card-desc">Manager Self-Service (MSS). Approves team leaves, overtime claims &amp; direct reports' attendance.</div>
-          <div class="role-card-footer">
-            <span class="role-action-lbl"><?= ($activeRoleId === 6) ? 'Current Role ✓' : 'Click to Set' ?></span>
-            <span class="role-radio-circle"></span>
-          </div>
-        </div>
-
-        <!-- 7. Employee (ESS) (Tier 7) -->
-        <div class="role-card <?= ($activeRoleId === 7) ? 'active' : '' ?>" data-role-id="7" data-role-slug="employee" id="roleCard_7" onclick="selectRole(7)">
-          <div class="role-card-top">
-            <div class="role-icon-box" style="background: rgba(140, 122, 169, 0.15); color: var(--primary);">👤</div>
-            <span class="role-pill-badge" style="background: rgba(140, 122, 169, 0.15); color: var(--primary);">Tier 7 &bull; ESS Regular</span>
-          </div>
-          <div class="role-card-title">Employee (ESS)</div>
-          <div class="role-card-desc">Individual Employee Self-Service. Clock-in/out, leave applications &amp; view personal payslips.</div>
-          <div class="role-card-footer">
-            <span class="role-action-lbl"><?= ($activeRoleId === 7) ? 'Current Role ✓' : 'Click to Set' ?></span>
-            <span class="role-radio-circle"></span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Dropdown selector & Password Configuration -->
-      <div class="form-group" style="margin-bottom: 16px;">
-        <label class="form-label" for="role_id">Assigned Security Role Tier *</label>
-        <select name="role_id" id="role_id" class="form-control" onchange="syncRoleFromDropdown(this.value)">
+      <div class="form-group" style="margin-bottom: 20px; max-width: 580px;">
+        <label class="form-label" for="role_id" style="font-weight: 700; font-size: 13.5px;">
+          System Access Role <span style="color: #ef4444;">*</span>
+        </label>
+        <select name="role_id" id="role_id" class="form-control" required onchange="updateRoleHelpDesc(this)">
           <?php foreach ($roles as $r): 
             $lvl = $r['hierarchy_level'] ?? $r['id'];
           ?>
             <option value="<?= esc($r['id']) ?>" 
+                    data-slug="<?= esc($r['slug']) ?>"
                     data-desc="<?= esc($r['description']) ?>"
                     <?= ($activeRoleId == $r['id']) ? 'selected' : '' ?>>
               Tier <?= $lvl ?>: <?= esc($r['name']) ?> &mdash; <?= esc($r['description']) ?>
             </option>
           <?php endforeach; ?>
         </select>
-        <div style="font-size: 12px; color: #64748b; margin-top: 4px;" id="roleHelpDesc">
-          Changing this updates the employee's system-wide permissions and portal menus.
+        <div style="font-size: 12px; color: #64748b; margin-top: 6px;" id="roleHelpDesc">
+          <?php
+            $currentRoleDesc = 'Standard Individual Employee Self-Service. Can clock in/out, view payslips, and apply for leaves.';
+            foreach ($roles as $r) {
+              if ($activeRoleId == $r['id']) {
+                $currentRoleDesc = $r['description'];
+                break;
+              }
+            }
+            echo esc($currentRoleDesc);
+          ?>
         </div>
       </div>
 
@@ -844,7 +626,7 @@
 
       <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 24px;">
         <div>
-          <?php if (($currentRoleSlug ?? '') === 'super_admin' || in_array('employee.delete', $userPermissions ?? [])): ?>
+          <?php if (($currentRoleSlug ?? '') === 'super_admin'): ?>
             <button type="button" class="btn btn-danger" onclick="document.getElementById('modalDeleteEmployeeEdit').style.display='flex'" style="display: inline-flex; align-items: center; gap: 6px;">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
               Delete Employee
@@ -863,7 +645,7 @@
 </div>
 
 <!-- DELETE CONFIRMATION MODAL -->
-<?php if (($currentRoleSlug ?? '') === 'super_admin' || in_array('employee.delete', $userPermissions ?? [])): ?>
+<?php if (($currentRoleSlug ?? '') === 'super_admin'): ?>
 <div id="modalDeleteEmployeeEdit" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 20px;">
   <div style="background: var(--bg-card, #ffffff); border: 1px solid var(--border-color, #e2e8f0); border-radius: 16px; width: 100%; max-width: 480px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4); overflow: hidden; animation: popIn 0.2s ease-out;">
     <div style="padding: 24px; border-bottom: 1px solid var(--border-color, #e2e8f0); display: flex; align-items: center; gap: 14px;">
@@ -901,36 +683,11 @@
 
 
 <script>
-// Role Selection Card & Dropdown Sync
-function selectRole(roleId) {
-  const select = document.getElementById('role_id');
-  if (select) {
-    select.value = roleId;
-    syncRoleFromDropdown(roleId);
-  }
-}
-
-function syncRoleFromDropdown(roleId) {
-  document.querySelectorAll('.role-card').forEach(card => {
-    card.classList.remove('active');
-    const footerLbl = card.querySelector('.role-action-lbl');
-    if (footerLbl) footerLbl.textContent = 'Click to Set';
-  });
-
-  const targetCard = document.getElementById('roleCard_' + roleId);
-  if (targetCard) {
-    targetCard.classList.add('active');
-    const footerLbl = targetCard.querySelector('.role-action-lbl');
-    if (footerLbl) footerLbl.textContent = 'Selected ✓';
-  }
-
-  const select = document.getElementById('role_id');
+// System Role Description helper
+function updateRoleHelpDesc(select) {
   if (select && select.selectedIndex >= 0) {
     const opt = select.options[select.selectedIndex];
-    const roleName = opt.text.split('—')[0].trim();
     const roleDesc = opt.getAttribute('data-desc') || opt.text;
-    const lblRole = document.getElementById('lblSelectedRoleName');
-    if (lblRole) lblRole.textContent = roleName;
     const descHelp = document.getElementById('roleHelpDesc');
     if (descHelp) descHelp.textContent = roleDesc;
   }
@@ -989,7 +746,10 @@ if (btnClear && pwInput) {
   });
 }
 
-// Profile Photo Preview for Edit
+// Profile Photo Preview & Removal for Edit
+const originalPhotoSrc = <?= json_encode($hasExistingPhoto ? base_url(esc($employee['profile_photo'])) : '') ?>;
+const hadExistingPhoto = <?= $hasExistingPhoto ? 'true' : 'false' ?>;
+
 function previewProfilePhoto(input) {
   if (input.files && input.files[0]) {
     const file = input.files[0];
@@ -998,20 +758,124 @@ function previewProfilePhoto(input) {
       const img = document.getElementById('photoPreviewImg');
       const placeholder = document.getElementById('photoPlaceholder');
       const filenameLbl = document.getElementById('photoFilename');
+      const btnRemove = document.getElementById('btnRemovePhoto');
+      const removeInput = document.getElementById('remove_photo');
+      const btnLabel = document.getElementById('photoBtnLabel');
 
+      if (removeInput) removeInput.value = '0';
       if (img) {
         img.src = e.target.result;
         img.style.display = 'block';
       }
       if (placeholder) placeholder.style.display = 'none';
+      if (btnRemove) {
+        btnRemove.style.display = 'inline-flex';
+        btnRemove.innerHTML = '✕ Cancel New Photo';
+        btnRemove.style.background = '#fee2e2';
+        btnRemove.style.color = '#b91c1c';
+      }
+      if (btnLabel) {
+        btnLabel.textContent = 'Change Selection';
+      }
       if (filenameLbl) {
         const sizeKb = Math.round(file.size / 1024);
-        filenameLbl.textContent = `${file.name} (${sizeKb} KB) - Ready to update`;
+        filenameLbl.textContent = `${file.name} (${sizeKb} KB) - Ready to upload on save`;
         filenameLbl.style.color = 'var(--primary)';
         filenameLbl.style.fontWeight = '600';
       }
     };
     reader.readAsDataURL(file);
+  }
+}
+
+function handlePhotoRemoval() {
+  const fileInput = document.getElementById('profile_photo');
+  const img = document.getElementById('photoPreviewImg');
+  const placeholder = document.getElementById('photoPlaceholder');
+  const filenameLbl = document.getElementById('photoFilename');
+  const btnRemove = document.getElementById('btnRemovePhoto');
+  const removeInput = document.getElementById('remove_photo');
+  const btnLabel = document.getElementById('photoBtnLabel');
+
+  // Case 1: User just picked a new file and wants to cancel / undo picking it
+  if (fileInput && fileInput.files && fileInput.files.length > 0) {
+    fileInput.value = '';
+    if (hadExistingPhoto) {
+      if (img) {
+        img.src = originalPhotoSrc;
+        img.style.display = 'block';
+      }
+      if (placeholder) placeholder.style.display = 'none';
+      if (btnRemove) {
+        btnRemove.style.display = 'inline-flex';
+        btnRemove.innerHTML = '✕ Remove Photo';
+        btnRemove.style.background = '#fee2e2';
+        btnRemove.style.color = '#b91c1c';
+      }
+      if (btnLabel) btnLabel.textContent = 'Change Photograph';
+      if (filenameLbl) {
+        filenameLbl.textContent = 'Current photo active on file';
+        filenameLbl.style.color = '#64748b';
+        filenameLbl.style.fontWeight = 'normal';
+      }
+      if (removeInput) removeInput.value = '0';
+    } else {
+      if (img) {
+        img.src = '';
+        img.style.display = 'none';
+      }
+      if (placeholder) placeholder.style.display = 'block';
+      if (btnRemove) btnRemove.style.display = 'none';
+      if (btnLabel) btnLabel.textContent = 'Choose Photograph';
+      if (filenameLbl) {
+        filenameLbl.textContent = 'No photo uploaded';
+        filenameLbl.style.color = '#64748b';
+        filenameLbl.style.fontWeight = 'normal';
+      }
+      if (removeInput) removeInput.value = '0';
+    }
+    return;
+  }
+
+  // Case 2: Existing photo on file - toggle removal or undo removal
+  if (removeInput && removeInput.value === '1') {
+    // Undo removal
+    removeInput.value = '0';
+    if (img) {
+      img.src = originalPhotoSrc;
+      img.style.display = 'block';
+    }
+    if (placeholder) placeholder.style.display = 'none';
+    if (btnRemove) {
+      btnRemove.innerHTML = '✕ Remove Photo';
+      btnRemove.style.background = '#fee2e2';
+      btnRemove.style.color = '#b91c1c';
+    }
+    if (btnLabel) btnLabel.textContent = 'Change Photograph';
+    if (filenameLbl) {
+      filenameLbl.textContent = 'Current photo active on file';
+      filenameLbl.style.color = '#64748b';
+      filenameLbl.style.fontWeight = 'normal';
+    }
+  } else {
+    // Mark for removal
+    if (removeInput) removeInput.value = '1';
+    if (img) {
+      img.src = '';
+      img.style.display = 'none';
+    }
+    if (placeholder) placeholder.style.display = 'block';
+    if (btnRemove) {
+      btnRemove.innerHTML = '↺ Undo Remove';
+      btnRemove.style.background = '#e2e8f0';
+      btnRemove.style.color = '#334155';
+    }
+    if (btnLabel) btnLabel.textContent = 'Choose Photograph';
+    if (filenameLbl) {
+      filenameLbl.textContent = 'Photo marked for deletion (will be removed on save)';
+      filenameLbl.style.color = '#dc2626';
+      filenameLbl.style.fontWeight = '600';
+    }
   }
 }
 
@@ -1044,52 +908,62 @@ if (presentAddrEdit) {
 }
 
 // ==============================================================
-// COMPENSATION & MANUAL SALARY LOGIC
+// MINIMAL SALARY & CTC CALCULATION LOGIC
 // ==============================================================
-function setSalaryMode(mode) {
-  document.getElementById('salary_mode').value = mode;
-  const btnAuto = document.getElementById('btnModeAuto');
-  const btnCust = document.getElementById('btnModeCustom');
-  const customSection = document.getElementById('customSalaryBreakdown');
-
-  if (mode === 'auto') {
-    btnAuto.style.background = '#ffffff';
-    btnAuto.style.color = 'var(--primary, #4f46e5)';
-    btnAuto.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
-    btnCust.style.background = 'transparent';
-    btnCust.style.color = '#64748b';
-    btnCust.style.boxShadow = 'none';
-    if (customSection) customSection.style.display = 'none';
-    calculateSalaryBreakdown();
-  } else {
-    btnCust.style.background = '#ffffff';
-    btnCust.style.color = 'var(--primary, #4f46e5)';
-    btnCust.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
-    btnAuto.style.background = 'transparent';
-    btnAuto.style.color = '#64748b';
-    btnAuto.style.boxShadow = 'none';
-    if (customSection) customSection.style.display = 'block';
-    calculateCustomSalary();
-  }
-}
-
-function calculateSalaryBreakdown() {
-  const basic = parseFloat(document.getElementById('basic_salary').value) || 0;
-  const mode = document.getElementById('salary_mode').value;
-
-  if (mode === 'custom') {
-    calculateCustomSalary();
-    return;
-  }
-
+function onMinimalBasicInput(val) {
+  const basic = parseFloat(val) || 0;
   const hra = Math.round(basic * 0.40);
   const conv = 1600;
   const spec = Math.round(basic * 0.10);
   const med = 1250;
   const pf = Math.round(basic * 0.12);
-  const tax = Math.round(basic * 0.10);
+  const tax = 200;
   const ins = 120;
+  const gross = basic + hra + conv + spec + med;
+  const deductions = pf + tax + ins;
+  const net = Math.max(0, gross - deductions);
+  const ctc = gross * 12;
 
+  const ctcInput = document.getElementById('annual_ctc');
+  if (ctcInput && document.activeElement === document.getElementById('basic_salary')) {
+    ctcInput.value = ctc;
+  }
+  updateMinimalPreviews(gross, net);
+  syncHiddenSalaryInputs(hra, conv, spec, med, pf, tax, ins);
+}
+
+function onMinimalCtcInput(val) {
+  const ctc = parseFloat(val) || 0;
+  const monthlyGross = Math.round(ctc / 12);
+  const basic = Math.round(monthlyGross * 0.50);
+  const basicInput = document.getElementById('basic_salary');
+  if (basicInput && document.activeElement === document.getElementById('annual_ctc')) {
+    basicInput.value = basic;
+  }
+  const hra = Math.round(basic * 0.40);
+  const conv = 1600;
+  const spec = Math.max(0, monthlyGross - (basic + hra + conv + 1250));
+  const med = 1250;
+  const pf = Math.round(basic * 0.12);
+  const tax = 200;
+  const ins = 120;
+  const gross = monthlyGross;
+  const deductions = pf + tax + ins;
+  const net = Math.max(0, gross - deductions);
+
+  updateMinimalPreviews(gross, net);
+  syncHiddenSalaryInputs(hra, conv, spec, med, pf, tax, ins);
+}
+
+function updateMinimalPreviews(gross, net) {
+  const fmt = (n) => '₹' + Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const netEl = document.getElementById('minimal_net_preview');
+  const grossEl = document.getElementById('minimal_gross_preview');
+  if (netEl) netEl.textContent = fmt(net) + ' / mo';
+  if (grossEl) grossEl.textContent = 'Gross Monthly: ' + fmt(gross);
+}
+
+function syncHiddenSalaryInputs(hra, conv, spec, med, pf, tax, ins) {
   if (document.getElementById('hra')) document.getElementById('hra').value = hra;
   if (document.getElementById('conveyance_allowance')) document.getElementById('conveyance_allowance').value = conv;
   if (document.getElementById('special_allowance')) document.getElementById('special_allowance').value = spec;
@@ -1097,107 +971,42 @@ function calculateSalaryBreakdown() {
   if (document.getElementById('pf_deduction')) document.getElementById('pf_deduction').value = pf;
   if (document.getElementById('tax_deduction')) document.getElementById('tax_deduction').value = tax;
   if (document.getElementById('insurance_deduction')) document.getElementById('insurance_deduction').value = ins;
-
-  const gross = basic + hra + conv + spec + med;
-  const deductions = pf + tax + ins;
-  const net = Math.max(0, gross - deductions);
-  const ctc = gross * 12;
-
-  updateSalaryDisplay(basic, gross, deductions, net, ctc);
-  validateBandRange(basic);
 }
 
-function calculateCustomSalary() {
-  const basic = parseFloat(document.getElementById('basic_salary').value) || 0;
-  const hra = parseFloat(document.getElementById('hra').value) || 0;
-  const conv = parseFloat(document.getElementById('conveyance_allowance').value) || 0;
-  const spec = parseFloat(document.getElementById('special_allowance').value) || 0;
-  const med = parseFloat(document.getElementById('medical_allowance').value) || 0;
-  const pf = parseFloat(document.getElementById('pf_deduction').value) || 0;
-  const tax = parseFloat(document.getElementById('tax_deduction').value) || 0;
-  const ins = parseFloat(document.getElementById('insurance_deduction').value) || 0;
-
-  const gross = basic + hra + conv + spec + med;
-  const deductions = pf + tax + ins;
-  const net = Math.max(0, gross - deductions);
-  const ctc = gross * 12;
-
-  updateSalaryDisplay(basic, gross, deductions, net, ctc);
-  validateBandRange(basic);
-}
-
-function updateSalaryDisplay(basic, gross, deductions, net, ctc) {
-  const fmt = (num) => '₹' + Number(num).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  if (document.getElementById('disp_basic')) document.getElementById('disp_basic').innerText = fmt(basic);
-  if (document.getElementById('disp_gross')) document.getElementById('disp_gross').innerText = fmt(gross);
-  if (document.getElementById('disp_deductions')) document.getElementById('disp_deductions').innerText = '-' + fmt(deductions);
-  if (document.getElementById('disp_net')) document.getElementById('disp_net').innerText = fmt(net);
-  if (document.getElementById('preview_annual_ctc')) document.getElementById('preview_annual_ctc').innerText = fmt(ctc) + ' / annum';
-}
-
-function onPayGradeChange(select) {
-  const opt = select.options[select.selectedIndex];
-  if (!opt) return;
-
-  const min = parseFloat(opt.getAttribute('data-min')) || 0;
-  const max = parseFloat(opt.getAttribute('data-max')) || 0;
-  const name = opt.getAttribute('data-name') || opt.text;
-
-  const lbl = document.getElementById('lblActiveBandName');
-  if (lbl) lbl.innerText = name;
-
-  validateBandRange(parseFloat(document.getElementById('basic_salary').value) || 0);
-}
-
-function validateBandRange(amount) {
-  const gradeSelect = document.getElementById('pay_grade_id');
-  if (!gradeSelect) return;
-  const opt = gradeSelect.options[gradeSelect.selectedIndex];
-  if (!opt) return;
-
-  const min = parseFloat(opt.getAttribute('data-min')) || 0;
-  const max = parseFloat(opt.getAttribute('data-max')) || 0;
-  const feedback = document.getElementById('salaryBandFeedback');
-  if (!feedback) return;
-
-  if (amount >= min && (max === 0 || amount <= max)) {
-    feedback.innerHTML = '<span style="color: #059669;">✓ Within selected pay band (₹' + min.toLocaleString('en-IN') + ' - ₹' + max.toLocaleString('en-IN') + ')</span>';
-  } else if (amount < min) {
-    feedback.innerHTML = '<span style="color: #d97706;">ℹ Below pay band minimum (₹' + min.toLocaleString('en-IN') + ') - Custom override</span>';
-  } else {
-    feedback.innerHTML = '<span style="color: #d97706;">ℹ Above pay band maximum (₹' + max.toLocaleString('en-IN') + ') - Custom override</span>';
-  }
-}
-
-function applyPresetSalary(type) {
-  const gradeSelect = document.getElementById('pay_grade_id');
-  if (!gradeSelect) return;
-  const opt = gradeSelect.options[gradeSelect.selectedIndex];
-  if (!opt) return;
-
-  const min = parseFloat(opt.getAttribute('data-min')) || 0;
-  const max = parseFloat(opt.getAttribute('data-max')) || 45000;
-  let target = min;
-
-  if (type === 'min') {
-    target = min === 0 ? 15000 : min;
-  } else if (type === 'mid') {
-    target = Math.round((min + max) / 2);
-  } else if (type === 'max') {
-    target = max;
-  }
-
-  const basicInput = document.getElementById('basic_salary');
-  if (basicInput) {
-    basicInput.value = target;
-    calculateSalaryBreakdown();
-  }
-}
-
-// Initial calculation on page load
 document.addEventListener('DOMContentLoaded', function() {
-  const gradeSelect = document.getElementById('pay_grade_id');
-  if (gradeSelect) onPayGradeChange(gradeSelect);
-  calculateSalaryBreakdown();
+  const basicInput = document.getElementById('basic_salary');
+  if (basicInput && basicInput.value) {
+    onMinimalBasicInput(basicInput.value);
+  }
+
+  const statusEl = document.getElementById('employment_status');
+  const typeEl = document.getElementById('employment_type');
+  if (statusEl) statusEl.addEventListener('change', toggleEditProbation);
+  if (typeEl) typeEl.addEventListener('change', toggleEditProbation);
 });
+
+function toggleEditProbation() {
+  const status = document.getElementById('employment_status').value;
+  const type = document.getElementById('employment_type').value;
+  const panel = document.getElementById('probationSetupWrapperEdit');
+  if (!panel) return;
+  if (status === 'probation' || type === 'probation') {
+    panel.style.display = 'block';
+  } else {
+    panel.style.display = 'none';
+  }
+}
+
+function calcEditProbationDate(months) {
+  const joiningDateStr = '<?= esc($employee['joining_date'] ?: date('Y-m-d')) ?>';
+  const base = new Date(joiningDateStr);
+  base.setMonth(base.getMonth() + parseInt(months));
+  const yyyy = base.getFullYear();
+  const mm = String(base.getMonth() + 1).padStart(2, '0');
+  const dd = String(base.getDate()).padStart(2, '0');
+  const endInput = document.getElementById('probation_end_date_edit');
+  if (endInput) {
+    endInput.value = `${yyyy}-${mm}-${dd}`;
+  }
+}
 </script>

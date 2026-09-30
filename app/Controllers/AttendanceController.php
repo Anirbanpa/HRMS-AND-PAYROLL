@@ -53,7 +53,8 @@ class AttendanceController extends BaseController
 
         $employeeModel   = new EmployeeModel();
         $employees       = $employeeModel->select('id, employee_code, first_name, last_name, department_id')
-            ->where('employment_status', 'active')
+            ->whereIn('employment_status', ['active', 'probation', 'notice_period'])
+            ->where('deleted_at', null)
             ->orderBy('first_name', 'ASC')
             ->findAll();
 

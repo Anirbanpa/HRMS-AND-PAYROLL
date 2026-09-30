@@ -27,7 +27,7 @@ class CommunicationController extends BaseController
 
         $templates     = $templateModel->findAll();
         $announcements = $announcementModel->getActiveAnnouncements(1);
-        $employees     = $empModel->where('employment_status', 'active')->where('deleted_at', null)->findAll();
+        $employees     = $empModel->whereIn('employment_status', ['active', 'probation', 'notice_period'])->where('deleted_at', null)->findAll();
 
         $data = [
             'templates'     => $templates,

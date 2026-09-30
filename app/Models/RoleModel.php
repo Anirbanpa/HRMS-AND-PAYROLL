@@ -77,6 +77,19 @@ class RoleModel extends BaseModel
         $db = \Config\Database::connect();
         $db->transStart();
 
+        $role = $this->find($roleId);
+        $isSuperAdmin = ($role && $role['slug'] === 'super_admin');
+
+        // Security rule: Only Super Admin may possess delete permissions
+        if (!$isSuperAdmin && !empty($permissionIds)) {
+            $deletePerms = $db->table('permissions')
+                ->where('slug', 'employee.delete')
+                ->orLike('slug', '.delete', 'before')
+                ->get()->getResultArray();
+            $delPermIds = array_column($deletePerms, 'id');
+            $permissionIds = array_diff($permissionIds, $delPermIds);
+        }
+
         $db->table('role_permissions')->where('role_id', $roleId)->delete();
 
         if (!empty($permissionIds)) {

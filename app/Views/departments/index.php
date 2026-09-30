@@ -113,6 +113,7 @@
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                         Edit
                       </button>
+                      <?php if (($currentRoleSlug ?? '') === 'super_admin'): ?>
                       <button type="button" class="btn btn-sm btn-delete-dept" 
                               onclick="openDeleteDeptModal(<?= (int)$dept['id'] ?>, '<?= esc($dept['name'], 'js') ?>', <?= (int)$dept['employee_count'] ?>)"
                               title="Delete Department" 
@@ -120,6 +121,7 @@
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
                         Delete
                       </button>
+                      <?php endif; ?>
                     </div>
                   </td>
                 </tr>
@@ -205,6 +207,7 @@
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                         Edit
                       </button>
+                      <?php if (($currentRoleSlug ?? '') === 'super_admin'): ?>
                       <button type="button" class="btn btn-sm btn-delete-desig" 
                               onclick="openDeleteDesigModal(<?= (int)$desig['id'] ?>, '<?= esc($desig['name'], 'js') ?>', <?= (int)($desig['employee_count'] ?? 0) ?>)"
                               title="Delete Designation" 
@@ -212,6 +215,7 @@
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
                         Delete
                       </button>
+                      <?php endif; ?>
                     </div>
                   </td>
                 </tr>
@@ -419,6 +423,7 @@
 <!-- ============================================================== -->
 <!-- 2. DELETE DEPARTMENT MODAL                                     -->
 <!-- ============================================================== -->
+<?php if (($currentRoleSlug ?? '') === 'super_admin'): ?>
 <div id="modalDeleteDept" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 16px;">
   <div class="card" style="width: 100%; max-width: 480px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 14px; overflow: hidden; background: var(--bg-card, #ffffff);">
     <div class="card-header" style="background: rgba(239, 68, 68, 0.08); border-bottom: 1px solid rgba(239, 68, 68, 0.2); padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;">
@@ -459,6 +464,7 @@
     </div>
   </div>
 </div>
+<?php endif; ?>
 
 <!-- ============================================================== -->
 <!-- 3. EDIT DESIGNATION MODAL                                      -->
@@ -544,6 +550,7 @@
 <!-- ============================================================== -->
 <!-- 4. DELETE DESIGNATION MODAL                                    -->
 <!-- ============================================================== -->
+<?php if (($currentRoleSlug ?? '') === 'super_admin'): ?>
 <div id="modalDeleteDesig" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 16px;">
   <div class="card" style="width: 100%; max-width: 480px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 14px; overflow: hidden; background: var(--bg-card, #ffffff);">
     <div class="card-header" style="background: rgba(239, 68, 68, 0.08); border-bottom: 1px solid rgba(239, 68, 68, 0.2); padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;">
@@ -584,6 +591,7 @@
     </div>
   </div>
 </div>
+<?php endif; ?>
 
 <script>
 // --- MAIN TABLE TABS ---

@@ -27,34 +27,69 @@ class ProbationController extends BaseController
         $probationers = $empModel->groupStart()
                 ->where('employment_status', 'probation')
                 ->orWhere('employment_type', 'probation')
-                ->orWhere('probation_end_date IS NOT NULL', null, false)
             ->groupEnd()
+            ->where('deleted_at', null)
             ->whereNotIn('employment_status', ['terminated', 'resigned', 'retired'])
             ->findAll();
 
         foreach ($probationers as $prob) {
-            $existing = $probationModel->where('employee_id', $prob['id'])->first();
+            $existing = $probationModel->where('employee_id', $prob['id'])
+                ->orderBy('id', 'DESC')
+                ->first();
+            $joinDate = $prob['joining_date'] ?: date('Y-m-d');
+            $endDate  = $prob['probation_end_date'] ?: date('Y-m-d', strtotime('+3 months', strtotime($joinDate)));
+            $isDue    = (strtotime($endDate) <= strtotime('+15 days'));
+            $targetStatus = $isDue ? 'due' : 'under_review';
+
             if (!$existing) {
-                $joinDate = $prob['joining_date'] ?: date('Y-m-d');
-                $endDate  = $prob['probation_end_date'] ?: date('Y-m-d', strtotime('+3 months', strtotime($joinDate)));
-                $isDue    = (strtotime($endDate) <= strtotime('+15 days'));
                 $probationModel->insert([
                     'employee_id'                => $prob['id'],
                     'joining_date'               => $joinDate,
                     'initial_probation_end_date' => $endDate,
                     'current_probation_end_date' => $endDate,
-                    'assessment_status'          => $isDue ? 'due' : 'under_review',
+                    'assessment_status'          => $targetStatus,
                     'manager_id'                 => $prob['reporting_to'],
                 ]);
+            } elseif ($existing['assessment_status'] === 'confirmed' || empty($existing['assessment_status'])) {
+                // If employee is on probation in directory but assessment was previously confirmed, re-open evaluation
+                $probationModel->update($existing['id'], [
+                    'assessment_status'          => $targetStatus,
+                    'current_probation_end_date' => $endDate,
+                    'confirmation_date'          => null,
+                    'hr_decision'                => null,
+                    'hr_remarks'                 => null,
+                    'hr_action_at'               => null,
+                    'letter_generated'           => 0,
+                    'manager_id'                 => $prob['reporting_to'],
+                ]);
+            } elseif ($existing['assessment_status'] === 'under_review' && $isDue) {
+                $probationModel->update($existing['id'], [
+                    'assessment_status' => 'due',
+                ]);
+            }
 
-                // Ensure employee table has consistent status and probation_end_date
-                if ($prob['employment_status'] !== 'probation' || empty($prob['probation_end_date'])) {
-                    $empModel->update($prob['id'], [
-                        'employment_status'  => 'probation',
-                        'employment_type'    => 'probation',
-                        'probation_end_date' => $endDate,
-                    ]);
-                }
+            // Ensure employee master table has consistent probation_end_date
+            if (empty($prob['probation_end_date'])) {
+                $empModel->update($prob['id'], [
+                    'probation_end_date' => $endDate,
+                ]);
+            }
+        }
+
+        // Auto-close open probation assessments for active/confirmed employees
+        $activeEmployees = $empModel->where('employment_status', 'active')
+            ->where('deleted_at', null)
+            ->findAll();
+        foreach ($activeEmployees as $act) {
+            $openAssessment = $probationModel->where('employee_id', $act['id'])
+                ->whereIn('assessment_status', ['due', 'under_review'])
+                ->first();
+            if ($openAssessment) {
+                $probationModel->update($openAssessment['id'], [
+                    'assessment_status' => 'confirmed',
+                    'confirmation_date' => $act['confirmation_date'] ?: date('Y-m-d'),
+                    'hr_decision'       => 'confirmed',
+                ]);
             }
         }
 

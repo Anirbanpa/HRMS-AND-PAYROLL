@@ -114,6 +114,7 @@
                     <span>Edit</span>
                   </button>
 
+                  <?php if (($currentRoleSlug ?? '') === 'super_admin'): ?>
                   <a href="<?= site_url('templates/delete/' . $tpl['id']) ?>" 
                      class="btn btn-sm btn-danger" 
                      onclick="return confirm('Are you sure you want to delete template \'<?= esc($tpl['name'], 'js') ?>\' (<?= esc($tpl['template_code'], 'js') ?>)? This cannot be undone.');"
@@ -127,6 +128,7 @@
                     </svg>
                     <span>Delete</span>
                   </a>
+                  <?php endif; ?>
                 </div>
               </td>
             </tr>

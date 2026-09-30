@@ -46,7 +46,7 @@
           </a>
         <?php endif; ?>
 
-        <?php if (($currentRoleSlug ?? '') === 'super_admin' || in_array('employee.delete', $userPermissions ?? [])): ?>
+        <?php if (($currentRoleSlug ?? '') === 'super_admin'): ?>
           <button type="button" id="btnDeleteEmployee" class="btn btn-danger" style="display: inline-flex; align-items: center; gap: 6px;" onclick="document.getElementById('modalDeleteEmployee').style.display='flex'">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
             Delete Employee
@@ -378,9 +378,11 @@
                           View / Download
                         </a>
                       <?php endif; ?>
-                      <a href="<?= site_url('employees/document/delete/' . $doc['id']) ?>" class="btn btn-outline btn-sm" style="color: #ef4444;" onclick="return confirm('Permanently remove this document from vault?');">
-                        Delete
-                      </a>
+                      <?php if (($currentRoleSlug ?? '') === 'super_admin'): ?>
+                        <a href="<?= site_url('employees/document/delete/' . $doc['id']) ?>" class="btn btn-outline btn-sm" style="color: #ef4444;" onclick="return confirm('Permanently remove this document from vault?');">
+                          Delete
+                        </a>
+                      <?php endif; ?>
                     </td>
                   </tr>
                 <?php endforeach; ?>
@@ -440,7 +442,7 @@
 </div>
 
 <!-- DELETE CONFIRMATION MODAL -->
-<?php if (($currentRoleSlug ?? '') === 'super_admin' || in_array('employee.delete', $userPermissions ?? [])): ?>
+<?php if (($currentRoleSlug ?? '') === 'super_admin'): ?>
 <div id="modalDeleteEmployee" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 20px;">
   <div style="background: var(--bg-card, #ffffff); border: 1px solid var(--border-color, #e2e8f0); border-radius: 16px; width: 100%; max-width: 480px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4); overflow: hidden; animation: popIn 0.2s ease-out;">
     <div style="padding: 24px; border-bottom: 1px solid var(--border-color, #e2e8f0); display: flex; align-items: center; gap: 14px;">

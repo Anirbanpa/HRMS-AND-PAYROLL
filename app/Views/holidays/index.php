@@ -116,12 +116,14 @@
                   <?php endif; ?>
                 </td>
                 <td>
+                  <?php if (($currentRoleSlug ?? '') === 'super_admin'): ?>
                   <a href="<?= site_url('holidays/delete/' . $h['id']) ?>" 
                      class="btn btn-danger btn-sm" 
                      onclick="return confirm('Are you sure you want to remove this holiday?')"
                      style="padding: 4px 10px; font-weight: 600;">
                     &times; Delete
                   </a>
+                  <?php endif; ?>
                 </td>
               </tr>
             <?php endforeach; ?>

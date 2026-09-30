@@ -173,6 +173,7 @@ $routes->group('', ['filter' => 'auth'], static function ($routes) {
     // 23. Performance Management (Module 28)
     $routes->get('performance', 'PerformanceController::index');
     $routes->post('performance/goal', 'PerformanceController::storeGoal');
+    $routes->match(['GET', 'POST'], 'performance/goal/delete/(:num)', 'PerformanceController::deleteGoal/$1');
     $routes->post('performance/cycle', 'PerformanceController::storeCycle');
     $routes->post('performance/self-review', 'PerformanceController::submitSelfReview');
     $routes->post('performance/manager-review', 'PerformanceController::submitManagerReview');

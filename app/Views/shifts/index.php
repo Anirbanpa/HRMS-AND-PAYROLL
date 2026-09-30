@@ -1,7 +1,7 @@
 <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px;">
   <div>
     <h2 style="font-size: 24px; font-weight: 800; color: var(--color-slate-900); letter-spacing: -0.02em;">
-      Shift Management &amp; Rotational Roster
+      Shift and Rotation
     </h2>
     <p style="font-size: 13.5px; color: var(--color-slate-500); margin-top: 2px;">
       Define multi-shift timings, grace periods, rotational assignments, and department rosters.
@@ -10,7 +10,7 @@
   <div style="display: flex; gap: 10px;">
     <a href="<?= site_url('shifts/roster') ?>" class="btn btn-secondary">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-      Rota Planner
+      Rotation Planner
     </a>
     <button type="button" class="btn btn-primary" onclick="document.getElementById('modalCreateShift').style.display='flex'">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -62,11 +62,13 @@
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
           Edit
         </button>
+        <?php if (($currentRoleSlug ?? '') === 'super_admin'): ?>
         <a href="<?= site_url('shifts/delete/' . $s['id']) ?>" class="btn btn-danger btn-sm" style="padding: 6px 10px; font-size: 12px;" title="Delete Shift"
            onclick="return confirm('Are you sure you want to delete shift &quot;<?= esc(addslashes($s['name'])) ?>&quot;? All associated assignments will also be removed.');">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
           Delete
         </a>
+        <?php endif; ?>
       </div>
     </div>
   <?php endforeach; ?>
@@ -116,10 +118,12 @@
                 <span class="badge badge-success"><?= esc(ucfirst($a['status'])) ?></span>
               </td>
               <td style="text-align: right;">
+                <?php if (($currentRoleSlug ?? '') === 'super_admin'): ?>
                 <a href="<?= site_url('shifts/deallocate/' . $a['id']) ?>" class="btn btn-danger btn-sm" style="padding: 4px 8px; font-size: 11px;"
                    onclick="return confirm('Remove shift assignment for <?= esc(addslashes($a['first_name'] . ' ' . $a['last_name'])) ?>?');">
                   Remove
                 </a>
+                <?php endif; ?>
               </td>
             </tr>
           <?php endforeach; ?>

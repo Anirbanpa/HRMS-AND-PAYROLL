@@ -130,8 +130,8 @@ class DepartmentController extends BaseController
 
     public function delete($id)
     {
-        if (!$this->hasPermission('department.manage')) {
-            $this->session->setFlashdata('error', 'Access Denied: You do not have authorization to delete departments.');
+        if (($this->currentUser['role_slug'] ?? '') !== 'super_admin') {
+            $this->session->setFlashdata('error', 'Access Denied: Only Super Admin is authorized to delete departments.');
             return redirect()->to(site_url('departments'));
         }
 
@@ -252,8 +252,8 @@ class DepartmentController extends BaseController
      */
     public function deleteDesignation($id)
     {
-        if (!$this->hasPermission('department.manage') && !$this->hasPermission('designation.manage')) {
-            $this->session->setFlashdata('error', 'Access Denied: You do not have authorization to delete designations.');
+        if (($this->currentUser['role_slug'] ?? '') !== 'super_admin') {
+            $this->session->setFlashdata('error', 'Access Denied: Only Super Admin is authorized to delete designations.');
             return redirect()->to(site_url('departments?tab=designations'));
         }
 
